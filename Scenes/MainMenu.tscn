@@ -1,0 +1,170 @@
+[gd_scene load_steps=2 format=3 uid="uid://main_menu_scene"]
+
+[ext_resource type="Script" path="res://Scripts/UI/MainMenu.gd" id="1_mainmenu"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mainmenu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.1, 0.15, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="TopBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 40
+
+[node name="CoinDisplay" type="HBoxContainer" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CoinIcon" type="Label" parent="VBoxContainer/TopBar/CoinDisplay"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Coins:"
+
+[node name="CoinLabel" type="Label" parent="VBoxContainer/TopBar/CoinDisplay"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+text = "100"
+
+[node name="StreakDisplay" type="HBoxContainer" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 10
+theme_override_constants/separation = 10
+
+[node name="StreakLabel" type="Label" parent="VBoxContainer/TopBar/StreakDisplay"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "Best Streak: 0"
+
+[node name="DailyButton" type="Button" parent="VBoxContainer/TopBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "DAILY CHALLENGE"
+
+[node name="TitleContainer" type="CenterContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="Title" type="Label" parent="VBoxContainer/TitleContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 72
+text = "THE CAPTAIN'S DECK"
+
+[node name="Subtitle" type="CenterContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="SubtitleLabel" type="Label" parent="VBoxContainer/Subtitle"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 24
+text = "For Grandpa Ralph"
+
+[node name="Spacer" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="GameButtons" type="VBoxContainer" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 15
+
+[node name="BlackjackButton" type="Button" parent="VBoxContainer/GameButtons"]
+custom_minimum_size = Vector2(400, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "BLACKJACK"
+
+[node name="SolitaireButton" type="Button" parent="VBoxContainer/GameButtons"]
+custom_minimum_size = Vector2(400, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "SOLITAIRE"
+
+[node name="SlotsButton" type="Button" parent="VBoxContainer/GameButtons"]
+custom_minimum_size = Vector2(400, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "SLOTS"
+
+[node name="CrapsButton" type="Button" parent="VBoxContainer/GameButtons"]
+custom_minimum_size = Vector2(400, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "CRAPS"
+
+[node name="Spacer2" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="BottomBar" type="HBoxContainer" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+theme_override_constants/separation = 20
+
+[node name="ShopButton" type="Button" parent="VBoxContainer/BottomBar"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "SHOP"
+
+[node name="CollectionButton" type="Button" parent="VBoxContainer/BottomBar"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "MY FLEET"
+
+[node name="SettingsButton" type="Button" parent="VBoxContainer/BottomBar"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "SETTINGS"
+
+[node name="QuitButton" type="Button" parent="VBoxContainer/BottomBar"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "QUIT"
+
+[connection signal="pressed" from="VBoxContainer/TopBar/DailyButton" to="." method="_on_daily_pressed"]
+[connection signal="pressed" from="VBoxContainer/GameButtons/BlackjackButton" to="." method="_on_blackjack_pressed"]
+[connection signal="pressed" from="VBoxContainer/GameButtons/SolitaireButton" to="." method="_on_solitaire_pressed"]
+[connection signal="pressed" from="VBoxContainer/GameButtons/SlotsButton" to="." method="_on_slots_pressed"]
+[connection signal="pressed" from="VBoxContainer/GameButtons/CrapsButton" to="." method="_on_craps_pressed"]
+[connection signal="pressed" from="VBoxContainer/BottomBar/ShopButton" to="." method="_on_shop_pressed"]
+[connection signal="pressed" from="VBoxContainer/BottomBar/CollectionButton" to="." method="_on_collection_pressed"]
+[connection signal="pressed" from="VBoxContainer/BottomBar/SettingsButton" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="VBoxContainer/BottomBar/QuitButton" to="." method="_on_quit_pressed"]

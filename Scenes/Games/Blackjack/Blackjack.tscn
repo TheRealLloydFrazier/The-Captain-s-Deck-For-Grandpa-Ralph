@@ -1,0 +1,109 @@
+[gd_scene load_steps=2 format=3 uid="uid://blackjack_scene"]
+
+[ext_resource type="Script" path="res://Scripts/Games/BlackjackGame.gd" id="1_blackjack"]
+
+[node name="Blackjack" type="Node2D"]
+script = ExtResource("1_blackjack")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.05, 0.25, 0.15, 1)
+
+[node name="TableFelt" type="ColorRect" parent="."]
+offset_left = 200.0
+offset_top = 150.0
+offset_right = 1720.0
+offset_bottom = 930.0
+color = Color(0.1, 0.35, 0.2, 1)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="TopBar" type="HBoxContainer" parent="UI"]
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 1900.0
+offset_bottom = 60.0
+
+[node name="BackButton" type="Button" parent="UI/TopBar"]
+custom_minimum_size = Vector2(100, 40)
+text = "< BACK"
+
+[node name="BetDisplay" type="HBoxContainer" parent="UI/TopBar"]
+offset_left = 800.0
+offset_right = 1000.0
+
+[node name="BetLabel" type="Label" parent="UI/TopBar/BetDisplay"]
+text = "Bet: 0"
+
+[node name="CountDisplay" type="HBoxContainer" parent="UI/TopBar"]
+offset_left = 1500.0
+offset_right = 1900.0
+
+[node name="CountLabel" type="Label" parent="UI/TopBar/CountDisplay"]
+text = "Count: +0 (True: +0.0)"
+
+[node name="ActionButtons" type="HBoxContainer" parent="UI"]
+offset_left = 660.0
+offset_top = 850.0
+offset_right = 1260.0
+offset_bottom = 920.0
+theme_override_constants/separation = 15
+
+[node name="HitButton" type="Button" parent="UI/ActionButtons"]
+custom_minimum_size = Vector2(120, 60)
+theme_override_font_sizes/font_size = 24
+text = "HIT"
+
+[node name="StandButton" type="Button" parent="UI/ActionButtons"]
+custom_minimum_size = Vector2(120, 60)
+theme_override_font_sizes/font_size = 24
+text = "STAND"
+
+[node name="DoubleButton" type="Button" parent="UI/ActionButtons"]
+custom_minimum_size = Vector2(120, 60)
+theme_override_font_sizes/font_size = 24
+text = "DOUBLE"
+
+[node name="SplitButton" type="Button" parent="UI/ActionButtons"]
+custom_minimum_size = Vector2(120, 60)
+theme_override_font_sizes/font_size = 24
+text = "SPLIT"
+
+[node name="HintButton" type="Button" parent="UI/ActionButtons"]
+custom_minimum_size = Vector2(120, 60)
+theme_override_font_sizes/font_size = 24
+text = "HINT"
+
+[node name="CoachPanel" type="PanelContainer" parent="UI"]
+offset_left = 360.0
+offset_top = 940.0
+offset_right = 1560.0
+offset_bottom = 1070.0
+
+[node name="CoachMessage" type="Label" parent="UI/CoachPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Welcome to Blackjack, Captain! Place your bet to begin."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="PlayerValueLabel" type="Label" parent="UI"]
+offset_left = 860.0
+offset_top = 620.0
+offset_right = 1060.0
+offset_bottom = 660.0
+theme_override_font_sizes/font_size = 28
+text = "0"
+horizontal_alignment = 1
+
+[node name="DealerValueLabel" type="Label" parent="UI"]
+offset_left = 860.0
+offset_top = 220.0
+offset_right = 1060.0
+offset_bottom = 260.0
+theme_override_font_sizes/font_size = 28
+text = "0"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="UI/TopBar/BackButton" to="." method="_on_back_pressed"]

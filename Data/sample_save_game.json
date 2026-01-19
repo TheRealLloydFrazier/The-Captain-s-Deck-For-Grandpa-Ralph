@@ -1,0 +1,78 @@
+{
+	"_description": "Sample save game structure - actual saves go to user://save_game.json",
+	"save_version": 1,
+	"last_played": "2024-01-15T14:30:00",
+
+	"coins": 500,
+
+	"win_streaks": {
+		"solitaire": 3,
+		"blackjack": 1,
+		"slots": 0,
+		"craps": 0
+	},
+
+	"unlocked_card_backs": [
+		"classic_navy",
+		"battleship_gray"
+	],
+	"active_card_back": "classic_navy",
+
+	"unlocked_table_felts": [
+		"green_felt",
+		"navy_blue"
+	],
+	"active_table_felt": "green_felt",
+
+	"unlocked_ships": [
+		"uss_arizona",
+		"uss_fletcher"
+	],
+
+	"unlocked_specials": [],
+
+	"daily_challenges_completed": {
+		"2024-01-13": true,
+		"2024-01-14": true,
+		"2024-01-15": true
+	},
+
+	"settings": {
+		"four_color_deck": false,
+		"card_scale": 1.0,
+		"high_contrast": false,
+		"animation_speed": 1.0,
+		"solitaire_draw_count": 1,
+		"solitaire_hints_enabled": true,
+		"solitaire_undo_enabled": true,
+		"blackjack_coach_mode": true,
+		"blackjack_hint_style": "classic",
+		"blackjack_show_count": true,
+		"master_volume": 0.8,
+		"music_volume": 0.6,
+		"sfx_volume": 1.0,
+		"voice_enabled": true,
+		"touch_mode": false,
+		"confirm_bets": true
+	},
+
+	"stats": {
+		"total_games_played": 47,
+		"total_coins_earned": 1250,
+		"total_coins_spent": 750,
+		"solitaire_games_won": 12,
+		"solitaire_games_played": 25,
+		"solitaire_best_time": 245,
+		"solitaire_cards_moved": 1847,
+		"blackjack_games_won": 15,
+		"blackjack_games_played": 22,
+		"blackjack_blackjacks": 3,
+		"blackjack_biggest_win": 200,
+		"slots_games_played": 0,
+		"slots_jackpots": 0,
+		"slots_biggest_win": 0,
+		"craps_games_played": 0,
+		"craps_points_made": 0,
+		"longest_session_minutes": 45
+	}
+}
