@@ -2,6 +2,24 @@
 
 **A Casino RPG for Grandpa Ralph**
 
+## Playable now (web edition — no ads, no internet)
+
+The game Grandpa can actually play today lives in **[`web/`](web/)**. Open [`web/index.html`](web/index.html) in a browser, or copy the whole `web` folder onto his Android phone.
+
+**Games:** Klondike Solitaire (tap-to-move, undo, hints) · Blackjack 21 with the Card-Counting Coach · Anchor Slots · War at Sea  
+**Extras:** Grandpa Coins, Daily Muster, the Fleet, Settings card-back picker (Navy anchor or tasteful sailor-sweetheart pinups)
+
+```
+web/index.html          lobby + all games
+web/captains-logic.js   shared rules (required sibling file)
+web/cardbacks/          pinup portraits for face-down cards
+web/tests/run-tests.js  node tests/run-tests.js
+```
+
+The Godot 4 project below is the original design. Only Blackjack and the main menu were coded there. The web folder is the finished, phone-ready room.
+
+---
+
 A lovingly crafted card game experience with Navy themes, WWII-era aesthetics, and personalized rewards. Built with Godot 4.
 
 ## Features

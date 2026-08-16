@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b2239">
+<title>The Captain's Deck</title>
+<style>
+/* =============================================================================
+   THE CAPTAIN'S DECK — for Grandpa Ralph
+   One file. No internet needed. No ads. Ever.
+   Built to run on older Android phones: flexbox only, no CSS grid,
+   no flex-gap, transforms for all animation.
+   ============================================================================= */
+* { margin:0; padding:0; box-sizing:border-box;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation; }
+html, body { height:100%; overflow:hidden; }
+body {
+  font-family:"Segoe UI", Roboto, Arial, sans-serif;
+  background:#0b2239;
+  background-image:radial-gradient(ellipse at 50% 0%, #16406b 0%, #0b2239 65%);
+  color:#f5eeda;
+  font-size:18px;
+  line-height:1.35;
+  position:fixed; width:100%;
+}
+h1,h2,h3,.serif { font-family:Georgia, "Times New Roman", serif; }
+
+/* ---- Screens ---------------------------------------------------------- */
+.screen { position:absolute; top:0; left:0; right:0; bottom:0;
+  display:none; flex-direction:column; overflow:hidden; }
+.screen.show { display:flex; }
+
+/* ---- Shared top bar ---------------------------------------------------- */
+.topbar { display:flex; align-items:center; padding:8px 10px;
+  background:rgba(0,0,0,0.28); min-height:58px; }
+.topbar .backbtn { min-width:76px; }
+.topbar .bartitle { flex:1; text-align:center; font-size:21px; color:#d4af37;
+  font-family:Georgia, serif; white-space:nowrap; overflow:hidden; }
+.coinchip { background:#123252; border:2px solid #d4af37; border-radius:999px;
+  padding:4px 12px 4px 8px; font-size:18px; font-weight:bold; color:#ffd76a;
+  white-space:nowrap; }
+.coinchip .anch { color:#d4af37; }
+
+/* ---- Buttons ----------------------------------------------------------- */
+button { font-family:inherit; border:none; cursor:pointer; color:inherit; background:none; }
+.btn {
+  display:block; width:100%;
+  background:linear-gradient(#f3d777, #d4af37 55%, #b08d1f);
+  color:#241a00; font-size:22px; font-weight:bold;
+  border-radius:14px; padding:16px 18px;
+  border-bottom:4px solid #7a5f10;
+  text-align:center;
+}
+.btn:active { transform:translateY(2px); border-bottom-width:2px; }
+.btn.blue { background:linear-gradient(#2e5f92, #1c4470 55%, #132f4e);
+  color:#f5eeda; border-bottom-color:#0a1c30; }
+.btn.green { background:linear-gradient(#3f9e63, #27754a 55%, #1b5636);
+  color:#fff; border-bottom-color:#0f3a22; }
+.btn.red { background:linear-gradient(#d9534f, #b03430 55%, #8c2724);
+  color:#fff; border-bottom-color:#5e1614; }
+.btn.small { font-size:18px; padding:10px 12px; border-radius:10px; }
+.btn.disabled, .btn:disabled { opacity:0.38; pointer-events:none; }
+
+/* ---- Lobby ------------------------------------------------------------- */
+#scr-lobby { text-align:center; }
+#lobby-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:18px 16px 30px; }
+.lobby-flag { font-size:15px; letter-spacing:4px; color:#8fb3d9; margin-top:6px; }
+.lobby-title { font-size:34px; color:#d4af37; margin:2px 0 0;
+  text-shadow:0 2px 0 #000; letter-spacing:1px; }
+.lobby-sub { font-size:18px; color:#cfe0f0; margin-bottom:14px; font-style:italic; }
+.lobby-coins { display:inline-block; background:#123252; border:2px solid #d4af37;
+  border-radius:14px; padding:8px 22px; font-size:26px; font-weight:bold; color:#ffd76a;
+  margin-bottom:6px; }
+.lobby-streak { font-size:16px; color:#9fc3e8; margin-bottom:14px; }
+.gamebtn { display:flex; align-items:center; text-align:left;
+  background:linear-gradient(#1c4470, #132f4e);
+  border:2px solid #35597f; border-bottom:5px solid #0a1c30;
+  border-radius:16px; padding:12px 14px; margin:0 auto 12px; max-width:440px;
+  color:#f5eeda; width:100%; }
+.gamebtn:active { transform:translateY(2px); border-bottom-width:3px; }
+.gamebtn .gicon { width:58px; height:58px; border-radius:12px; margin-right:14px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:34px; flex-shrink:0; background:#f5eeda; }
+.gamebtn .gname { font-size:23px; font-weight:bold; font-family:Georgia, serif; }
+.gamebtn .gsub { font-size:15px; color:#9fc3e8; }
+.gamebtn.gold { background:linear-gradient(#7a5f10,#4d3a06); border-color:#d4af37; }
+.rowbtns { display:flex; max-width:440px; margin:2px auto 12px; }
+.rowbtns .btn { margin:0 5px; font-size:18px; padding:12px; }
+#daily-btn { max-width:440px; margin:0 auto 14px; font-size:19px; }
+#daily-btn.pulse { animation:pulse 1.1s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{ box-shadow:0 0 0 0 rgba(212,175,55,0.7);} 50%{ box-shadow:0 0 0 12px rgba(212,175,55,0);} }
+.dedication { margin-top:18px; color:#7f9dbd; font-size:14px; font-style:italic; }
+.dedication b { color:#d4af37; }
+
+/* ---- Card faces --------------------------------------------------------
+   Cards are plain DOM nodes: cheap to draw, crisp at any size, readable.  */
+.card {
+  position:absolute; left:0;
+  background:#fdfaef; border-radius:9px;
+  border:1px solid #97917e;
+  box-shadow:0 1px 3px rgba(0,0,0,0.45);
+  overflow:hidden;
+}
+.card .corner { position:absolute; top:2px; left:5px; line-height:0.95;
+  font-weight:bold; text-align:center; }
+.card .corner .r { display:block; }
+.card .corner .s { display:block; }
+.card .big { position:absolute; right:6%; bottom:2%; line-height:1; }
+.card.c-red  { color:#c0281c; }
+.card.c-blk  { color:#151a21; }
+.card.c-blu  { color:#1152b4; }
+.card.c-grn  { color:#1c7a34; }
+.card.down {
+  background:#123252;
+  background-image:radial-gradient(circle at 50% 42%, #1c4470 0%, #123252 70%);
+  border-color:#0a1c30;
+}
+.card.down.back-navy:after { content:"⚓"; position:absolute; top:0; left:0; right:0; bottom:0;
+  display:flex; align-items:center; justify-content:center;
+  color:#d4af37; opacity:0.9; }
+.card.down.back-pinup {
+  background-color:#123252;
+  background-repeat:no-repeat;
+  border-color:#7a5f10;
+}
+.card.down.back-pinup:after { content:none; }
+.card.sel { box-shadow:0 0 0 3px #ffd76a, 0 4px 10px rgba(0,0,0,0.5); z-index:60 !important; }
+.card.hintflash { animation:hintf 0.45s ease-in-out 3; }
+@keyframes hintf { 0%,100%{ box-shadow:0 1px 3px rgba(0,0,0,0.45);} 50%{ box-shadow:0 0 0 4px #6fe08f;} }
+.shake { animation:shk 0.3s ease-in-out; }
+@keyframes shk { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+/* ---- Solitaire table ---------------------------------------------------- */
+#scr-solitaire { background:#1e5c3a;
+  background-image:radial-gradient(ellipse at 50% 30%, #27754a 0%, #17492e 75%); }
+#sol-stats { display:flex; justify-content:center; padding:3px 0 0; font-size:15px; color:#bfe6cd; }
+#sol-stats span { margin:0 10px; }
+#sol-table { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:8px 4px 120px; position:relative; }
+#sol-top { display:flex; margin-bottom:10px; }
+#sol-tabs { display:flex; }
+.slot { position:relative; flex:1; margin:0 2px; min-width:0; }
+.slot .ph { position:absolute; top:0; left:0; right:0;
+  border:2px dashed rgba(255,255,255,0.35); border-radius:9px;
+  color:rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; }
+.slot.target .ph, .slot.target .card:last-child { box-shadow:0 0 0 3px #6fe08f; border-radius:9px; }
+#sol-actions { position:absolute; left:0; right:0; bottom:0;
+  display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+  background:rgba(10,28,20,0.92); }
+#sol-actions .btn { margin:0 4px; font-size:17px; padding:12px 4px; }
+#sol-auto { display:none; position:absolute; left:50%; bottom:78px; transform:translateX(-50%);
+  width:auto; padding:14px 26px; font-size:20px; z-index:80; }
+#sol-auto.show { display:block; animation:pulse 1.1s infinite; }
+
+/* victory cascade layer */
+#fxlayer { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:400; }
+#fxlayer .card { transition-property:transform, opacity; transition-timing-function:cubic-bezier(.3,.1,.7,1); }
+
+/* ---- Blackjack ---------------------------------------------------------- */
+#scr-blackjack { background:#1e5c3a;
+  background-image:radial-gradient(ellipse at 50% 30%, #27754a 0%, #17492e 75%); }
+#bj-main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  display:flex; flex-direction:column; padding:10px 12px 14px; }
+.bj-zone { position:relative; height:150px; margin:0 auto; width:100%; max-width:460px; }
+.bj-label { text-align:center; font-size:16px; color:#bfe6cd; }
+.bj-label b { color:#fff; font-size:19px; }
+#bj-coach { background:rgba(9,26,18,0.75); border:1px solid #3f9e63; border-radius:12px;
+  padding:10px 14px; margin:8px auto; max-width:460px; width:100%;
+  font-size:17px; color:#dff3e6; text-align:center; min-height:52px;
+  display:flex; align-items:center; justify-content:center; }
+#bj-count { text-align:center; font-size:14px; color:#9fd4b5; margin-bottom:2px; min-height:18px; }
+#bj-betrow, #bj-actrow, #bj-nextrow { display:flex; max-width:460px; margin:6px auto; width:100%; }
+#bj-betrow .btn, #bj-actrow .btn, #bj-nextrow .btn { margin:0 4px; padding:14px 4px; font-size:19px; }
+.chipbtn { background:linear-gradient(#f3d777,#d4af37); border-radius:999px !important; }
+.btn.recommend { animation:recpulse 1s ease-in-out infinite; }
+@keyframes recpulse { 0%,100%{ box-shadow:0 0 0 0 rgba(255,215,106,0.9);} 50%{ box-shadow:0 0 0 7px rgba(255,215,106,0);} }
+#bj-betline { text-align:center; font-size:18px; color:#ffd76a; min-height:24px; }
+
+/* ---- Slots -------------------------------------------------------------- */
+#scr-slots { background:#221433;
+  background-image:radial-gradient(ellipse at 50% 20%, #3b2358 0%, #221433 75%); }
+#sl-main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:center; padding:12px; }
+#sl-cab { background:linear-gradient(#132f4e,#0a1c30); border:3px solid #d4af37; border-radius:20px;
+  max-width:420px; margin:6px auto; padding:16px 12px; }
+#sl-reels { display:flex; justify-content:center; margin-bottom:10px; }
+.reel { width:29%; max-width:110px; height:110px; background:#fdfaef; border-radius:12px;
+  margin:0 5px; display:flex; align-items:center; justify-content:center;
+  font-size:58px; border-bottom:5px solid #97917e; overflow:hidden; color:#132f4e; }
+.reel.spin { animation:reelblur 0.09s linear infinite; }
+@keyframes reelblur { 0%{transform:translateY(-3px);} 100%{transform:translateY(3px);} }
+.reel.hit { animation:reelhit 0.5s ease; }
+[data-slbet].slon { box-shadow:0 0 0 3px #ffd76a; }
+@keyframes reelhit { 0%{transform:scale(1);} 40%{transform:scale(1.14);} 100%{transform:scale(1);} }
+#sl-msg { min-height:30px; font-size:20px; color:#ffd76a; margin:6px 0; font-weight:bold; }
+#sl-betrow { display:flex; max-width:420px; margin:8px auto; }
+#sl-betrow .btn { margin:0 4px; }
+#sl-pay { max-width:420px; margin:10px auto 0; background:rgba(0,0,0,0.3); border-radius:12px;
+  padding:10px 16px; font-size:16px; color:#cfc3e8; text-align:left; }
+#sl-pay .payrow { display:flex; justify-content:space-between; padding:2px 0; }
+#sl-pay .payrow b { color:#ffd76a; }
+
+/* ---- War at Sea ---------------------------------------------------------- */
+#scr-war { background:#26343f;
+  background-image:radial-gradient(ellipse at 50% 20%, #37576d 0%, #22303a 75%); }
+#war-main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; text-align:center; padding:12px; }
+.war-side { margin:6px auto; }
+.war-side .bj-label { margin-bottom:4px; }
+.war-cardbox { position:relative; width:110px; height:160px; margin:0 auto; }
+#war-vs { font-size:26px; color:#d4af37; font-family:Georgia,serif; margin:2px 0; }
+#war-msg { min-height:56px; font-size:20px; color:#ffd76a; font-weight:bold;
+  display:flex; align-items:center; justify-content:center; max-width:420px; margin:4px auto; }
+#war-btnrow { display:flex; max-width:420px; margin:8px auto; }
+#war-btnrow .btn { margin:0 5px; font-size:21px; }
+#war-pile { font-size:15px; color:#9fc3e8; min-height:20px; }
+
+/* ---- Fleet --------------------------------------------------------------- */
+#fl-main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px; }
+#fl-progress { text-align:center; color:#9fc3e8; font-size:17px; margin-bottom:10px; }
+.shipcard { display:flex; align-items:center; background:#12325288; border:2px solid #35597f;
+  border-radius:14px; padding:10px 12px; margin:0 auto 10px; max-width:460px; }
+.shipcard.locked { opacity:0.85; }
+.shipcard .shipart { width:104px; flex-shrink:0; margin-right:12px; }
+.shipcard .shipart svg { width:100%; height:auto; display:block; }
+.shipcard .sname { font-size:17px; font-weight:bold; }
+.shipcard .snick { font-size:14px; font-style:italic; color:#9fc3e8; }
+.shipcard .srar { display:inline-block; font-size:12px; border-radius:999px; padding:1px 9px;
+  margin-top:3px; color:#0b1622; font-weight:bold; }
+.shipcard .sact { margin-left:auto; text-align:center; flex-shrink:0; }
+.shipcard .sact .btn { width:auto; font-size:15px; padding:8px 12px; }
+.shipcard .owned { color:#6fe08f; font-size:15px; font-weight:bold; }
+
+/* ---- Settings ------------------------------------------------------------ */
+#st-main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px; }
+.setrow { display:flex; align-items:center; background:#12325288; border:1px solid #35597f;
+  border-radius:12px; padding:12px 14px; margin:0 auto 10px; max-width:460px; }
+.setrow .slab { flex:1; padding-right:10px; }
+.setrow .slab .t { font-size:19px; }
+.setrow .slab .d { font-size:14px; color:#9fc3e8; }
+.togbtn { min-width:86px; font-size:17px; font-weight:bold; padding:10px 0;
+  border-radius:999px; background:#0a1c30; color:#7f9dbd; border:2px solid #35597f; }
+.togbtn.on { background:#27754a; color:#fff; border-color:#6fe08f; }
+.segrow { display:flex; }
+.segbtn { font-size:16px; font-weight:bold; padding:10px 12px; background:#0a1c30;
+  color:#7f9dbd; border:2px solid #35597f; margin-left:-2px; }
+.segbtn:first-child { border-radius:10px 0 0 10px; margin-left:0; }
+.segbtn:last-child { border-radius:0 10px 10px 0; }
+.segbtn.on { background:#1c4470; color:#ffd76a; border-color:#d4af37; z-index:1; }
+.back-gallery { display:flex; flex-wrap:wrap; width:100%; margin-top:8px; }
+.back-pick { width:58px; height:82px; margin:4px; border:3px solid #35597f; border-radius:8px;
+  background:#123252; background-size:cover; background-position:center 16%;
+  background-repeat:no-repeat; position:relative; flex-shrink:0; padding:0; }
+.back-pick.on { border-color:#d4af37; box-shadow:0 0 0 2px #ffd76a; }
+.back-pick.navy-swatch:after { content:"⚓"; position:absolute; top:0; left:0; right:0; bottom:0;
+  display:flex; align-items:center; justify-content:center; color:#d4af37; font-size:22px; }
+.back-pick .blab { display:none; }
+
+/* ---- Toast / Modal -------------------------------------------------------- */
+#toast { position:fixed; left:50%; bottom:96px; transform:translateX(-50%) translateY(20px);
+  background:#0a1c30; color:#f5eeda; border:2px solid #d4af37; border-radius:14px;
+  padding:12px 20px; font-size:19px; max-width:86%; text-align:center;
+  opacity:0; pointer-events:none; z-index:500;
+  transition:opacity 0.25s, transform 0.25s; }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#modal-wrap { position:fixed; top:0; left:0; right:0; bottom:0; z-index:600;
+  background:rgba(4,10,18,0.78); display:none; align-items:center; justify-content:center;
+  padding:20px; }
+#modal-wrap.show { display:flex; }
+#modal { background:#0f2740; border:3px solid #d4af37; border-radius:18px;
+  max-width:430px; width:100%; max-height:86%; overflow-y:auto;
+  -webkit-overflow-scrolling:touch; padding:20px 18px; text-align:center; }
+#modal h2 { color:#d4af37; font-size:24px; margin-bottom:10px; }
+#modal .mbody { font-size:18px; color:#e7f0f8; margin-bottom:16px; text-align:left; }
+#modal .mbody.center { text-align:center; }
+#modal .btn { margin-top:8px; }
+.specline { display:flex; justify-content:space-between; border-bottom:1px solid #234; padding:5px 0; font-size:15px; }
+.specline .k { color:#9fc3e8; padding-right:10px; }
+.funfact { background:#123252; border-left:4px solid #d4af37; border-radius:6px;
+  padding:9px 11px; margin-top:10px; font-size:15px; font-style:italic; }
+
+/* Card size scaling — set on <body> */
+body.scale-lg { font-size:19px; }
+body.scale-xl { font-size:20px; }
+</style>
+</head>
+<body>
+
+<!-- ======================= LOBBY ======================= -->
+<div class="screen" id="scr-lobby">
+  <div id="lobby-scroll">
+    <div class="lobby-flag">⚓ ⚓ ⚓</div>
+    <h1 class="lobby-title">THE CAPTAIN'S DECK</h1>
+    <div class="lobby-sub">Grandpa Ralph's Card Room</div>
+    <div class="lobby-coins">⚓ <span id="lobby-coins">0</span> coins</div>
+    <div class="lobby-streak" id="lobby-streak"></div>
+    <button class="btn" id="daily-btn">⚓ DAILY MUSTER — collect 50 coins</button>
+    <button class="gamebtn" data-go="solitaire" aria-label="Play Solitaire">
+      <span class="gicon c-blk" style="color:#151a21;">♠</span>
+      <span><span class="gname">Solitaire</span><br><span class="gsub">Klondike — hints, undo, no pressure</span></span>
+    </button>
+    <button class="gamebtn" data-go="blackjack" aria-label="Play Blackjack 21">
+      <span class="gicon" style="color:#c0281c;">♥</span>
+      <span><span class="gname">Blackjack 21</span><br><span class="gsub">With your Card-Counting Coach</span></span>
+    </button>
+    <button class="gamebtn" data-go="slots" aria-label="Play Anchor Slots">
+      <span class="gicon" style="color:#1152b4;">⚓</span>
+      <span><span class="gname">Anchor Slots</span><br><span class="gsub">Pull the lever, win the pot</span></span>
+    </button>
+    <button class="gamebtn" data-go="war" aria-label="Play War at Sea">
+      <span class="gicon" style="color:#1c7a34;">♣</span>
+      <span><span class="gname">War at Sea</span><br><span class="gsub">High card wins the day</span></span>
+    </button>
+    <div class="rowbtns">
+      <button class="btn blue" data-go="fleet">🚢 The Fleet</button>
+      <button class="btn blue" data-go="settings">⚙ Settings</button>
+    </div>
+    <div class="dedication">Built with love for <b>Grandpa Ralph</b><br>
+      No ads · No sign-ups · Works without internet</div>
+  </div>
+</div>
+
+<!-- ======================= SOLITAIRE ======================= -->
+<div class="screen" id="scr-solitaire">
+  <div class="topbar">
+    <button class="btn blue small backbtn" data-go="lobby">◀ Back</button>
+    <div class="bartitle">♠ Solitaire</div>
+    <div class="coinchip"><span class="anch">⚓</span> <span class="coins-out">0</span></div>
+  </div>
+  <div id="sol-stats"><span id="sol-time">0:00</span><span id="sol-moves">Moves: 0</span><span id="sol-score"></span></div>
+  <div id="sol-table">
+    <div id="sol-top">
+      <div class="slot" id="sol-stock"></div>
+      <div class="slot" id="sol-waste"></div>
+      <div class="slot" id="sol-gap" style="pointer-events:none;"></div>
+      <div class="slot fnd" id="sol-f0"></div>
+      <div class="slot fnd" id="sol-f1"></div>
+      <div class="slot fnd" id="sol-f2"></div>
+      <div class="slot fnd" id="sol-f3"></div>
+    </div>
+    <div id="sol-tabs">
+      <div class="slot tab" id="sol-t0"></div>
+      <div class="slot tab" id="sol-t1"></div>
+      <div class="slot tab" id="sol-t2"></div>
+      <div class="slot tab" id="sol-t3"></div>
+      <div class="slot tab" id="sol-t4"></div>
+      <div class="slot tab" id="sol-t5"></div>
+      <div class="slot tab" id="sol-t6"></div>
+    </div>
+  </div>
+  <button class="btn" id="sol-auto">★ FINISH THE GAME ★</button>
+  <div id="sol-actions">
+    <button class="btn blue" id="sol-new">New Game</button>
+    <button class="btn blue" id="sol-undo">↩ Undo</button>
+    <button class="btn green" id="sol-hint">💡 Hint</button>
+  </div>
+</div>
+
+<!-- ======================= BLACKJACK ======================= -->
+<div class="screen" id="scr-blackjack">
+  <div class="topbar">
+    <button class="btn blue small backbtn" data-go="lobby">◀ Back</button>
+    <div class="bartitle">♥ Blackjack 21</div>
+    <div class="coinchip"><span class="anch">⚓</span> <span class="coins-out">0</span></div>
+  </div>
+  <div id="bj-main">
+    <div class="bj-label">Dealer shows <b id="bj-dval">—</b></div>
+    <div class="bj-zone" id="bj-dealer"></div>
+    <div id="bj-count"></div>
+    <div id="bj-coach">Welcome aboard, Captain. Place your bet.</div>
+    <div class="bj-zone" id="bj-player"></div>
+    <div class="bj-label">Your hand: <b id="bj-pval">—</b></div>
+    <div id="bj-betline"></div>
+    <div id="bj-betrow">
+      <button class="btn chipbtn" data-chip="10">10</button>
+      <button class="btn chipbtn" data-chip="25">25</button>
+      <button class="btn chipbtn" data-chip="50">50</button>
+      <button class="btn chipbtn" data-chip="100">100</button>
+    </div>
+    <div id="bj-nextrow">
+      <button class="btn green" id="bj-deal">DEAL</button>
+      <button class="btn blue" id="bj-clearbet">Clear Bet</button>
+    </div>
+    <div id="bj-actrow" style="display:none;">
+      <button class="btn green" id="bj-hit">HIT</button>
+      <button class="btn red" id="bj-stand">STAND</button>
+      <button class="btn" id="bj-double">DOUBLE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= SLOTS ======================= -->
+<div class="screen" id="scr-slots">
+  <div class="topbar">
+    <button class="btn blue small backbtn" data-go="lobby">◀ Back</button>
+    <div class="bartitle">⚓ Anchor Slots</div>
+    <div class="coinchip"><span class="anch">⚓</span> <span class="coins-out">0</span></div>
+  </div>
+  <div id="sl-main">
+    <div id="sl-cab">
+      <div id="sl-reels">
+        <div class="reel" id="sl-r0">⚓</div>
+        <div class="reel" id="sl-r1">★</div>
+        <div class="reel" id="sl-r2">7</div>
+      </div>
+      <div id="sl-msg">Good luck, Captain!</div>
+      <div id="sl-betrow">
+        <button class="btn blue small" data-slbet="5">Bet 5</button>
+        <button class="btn blue small" data-slbet="10">Bet 10</button>
+        <button class="btn blue small" data-slbet="25">Bet 25</button>
+      </div>
+      <button class="btn" id="sl-spin">SPIN — 10 coins</button>
+    </div>
+    <div id="sl-pay">
+      <div class="payrow"><span>7 · 7 · 7</span><b>×50 the bet</b></div>
+      <div class="payrow"><span>⚓ · ⚓ · ⚓</span><b>×25</b></div>
+      <div class="payrow"><span>★ · ★ · ★</span><b>×10</b></div>
+      <div class="payrow"><span>♥♥♥ or ♠♠♠</span><b>×5</b></div>
+      <div class="payrow"><span>Two anchors ⚓⚓</span><b>×2.5</b></div>
+      <div class="payrow"><span>One anchor ⚓</span><b>your bet back</b></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= WAR AT SEA ======================= -->
+<div class="screen" id="scr-war">
+  <div class="topbar">
+    <button class="btn blue small backbtn" data-go="lobby">◀ Back</button>
+    <div class="bartitle">♣ War at Sea</div>
+    <div class="coinchip"><span class="anch">⚓</span> <span class="coins-out">0</span></div>
+  </div>
+  <div id="war-main">
+    <div class="war-side">
+      <div class="bj-label">The Enemy Fleet</div>
+      <div class="war-cardbox" id="war-them"></div>
+    </div>
+    <div id="war-vs">— versus —</div>
+    <div class="war-side">
+      <div class="war-cardbox" id="war-you"></div>
+      <div class="bj-label">Your Ship</div>
+    </div>
+    <div id="war-msg">High card wins. 10 coins a battle — win pays 20.</div>
+    <div id="war-btnrow">
+      <button class="btn green" id="war-flip">⚔ BATTLE — 10 coins</button>
+    </div>
+    <div id="war-pile"></div>
+  </div>
+</div>
+
+<!-- ======================= FLEET ======================= -->
+<div class="screen" id="scr-fleet">
+  <div class="topbar">
+    <button class="btn blue small backbtn" data-go="lobby">◀ Back</button>
+    <div class="bartitle">🚢 The Fleet</div>
+    <div class="coinchip"><span class="anch">⚓</span> <span class="coins-out">0</span></div>
+  </div>
+  <div id="fl-main">
+    <div id="fl-progress"></div>
+    <div id="fl-list"></div>
+  </div>
+</div>
+
+<!-- ======================= SETTINGS ======================= -->
+<div class="screen" id="scr-settings">
+  <div class="topbar">
+    <button class="btn blue small backbtn" data-go="lobby">◀ Back</button>
+    <div class="bartitle">⚙ Settings</div>
+    <div class="coinchip"><span class="anch">⚓</span> <span class="coins-out">0</span></div>
+  </div>
+  <div id="st-main"></div>
+</div>
+
+<!-- ======================= OVERLAYS ======================= -->
+<div id="fxlayer"></div>
+<div id="toast"></div>
+<div id="modal-wrap"><div id="modal"></div></div>
+
+<script src="captains-logic.js"></script>
+<script>
+"use strict";
+if (typeof CaptainsDeck === "undefined") {
+  document.body.innerHTML =
+    '<div style="padding:24px;color:#f5eeda;font-family:Georgia,serif;max-width:440px;margin:40px auto;text-align:center">' +
+    "<h1 style='color:#d4af37'>The Captain's Deck</h1>" +
+    "<p>The game folder is incomplete. Copy the whole folder — " +
+    "<b>index.html</b>, <b>captains-logic.js</b>, and the <b>cardbacks</b> pictures — onto the phone.</p></div>";
+  throw new Error("captains-logic.js failed to load");
+}
+/* =============================================================================
+   THE CAPTAIN'S DECK — game code
+   Ported from Lloyd's Godot project (Global.gd, Dealer.gd, BlackjackGame.gd,
+   BlackjackStrategy.gd) into plain JavaScript that old Android browsers run.
+   ============================================================================= */
+
+/* ============================ SHIP DATA ==================================== */
+var SHIPS = [
+ {id:"uss_arizona", name:"USS Arizona (BB-39)", nick:"The Ari", type:"battleship", cls:"Pennsylvania-class Battleship", launched:"June 19, 1915", len:"608 feet", speed:"21 knots", crew:"1,177 officers and men", guns:"Twelve 14-inch guns", fact:"Sunk during the attack on Pearl Harbor. 1,177 crew members lost their lives. The memorial now stands over her resting place. In honor of those who gave all — she sails with you from the start.", rarity:"legendary", cost:0},
+ {id:"f4u_corsair", name:"F4U Corsair", nick:"Whistling Death", type:"plane", cls:"Fighter Aircraft", launched:"1940", len:"33 feet, 41-foot wingspan", speed:"446 mph", crew:"1 pilot", guns:"Six .50 caliber machine guns", fact:"Achieved an 11-to-1 kill ratio against Japanese aircraft. Its bent gull-wing design is instantly recognizable.", rarity:"rare", cost:400},
+ {id:"f6f_hellcat", name:"F6F Hellcat", nick:"Ace Maker", type:"plane", cls:"Fighter Aircraft", launched:"1942", len:"33 feet, 42-foot wingspan", speed:"380 mph", crew:"1 pilot", guns:"Six .50 caliber machine guns", fact:"Destroyed 5,223 aircraft during WWII — more than any other Allied naval aircraft. Designed specifically to counter the Zero.", rarity:"rare", cost:400},
+ {id:"sbd_dauntless", name:"SBD Dauntless", nick:"Slow But Deadly", type:"plane", cls:"Dive Bomber", launched:"1940", len:"33 feet, 41-foot wingspan", speed:"255 mph", crew:"2 — pilot and gunner", guns:"Two .50 cals, 2,250 lbs of bombs", fact:"Sank more enemy shipping than any other Allied aircraft. Decisive at Midway, sinking four Japanese carriers.", rarity:"rare", cost:450},
+ {id:"pt_109", name:"PT-109", nick:"JFK's Boat", type:"pt", cls:"Elco 80-foot PT Boat", launched:"1942", len:"80 feet", speed:"41 knots", crew:"12 officers and men", guns:"Four torpedo tubes, machine guns", fact:"Commanded by Lieutenant John F. Kennedy. Sunk by a Japanese destroyer in 1943; Kennedy's heroism saved his crew.", rarity:"rare", cost:500},
+ {id:"uss_fletcher", name:"USS Fletcher (DD-445)", nick:"Lead of the Pack", type:"destroyer", cls:"Fletcher-class Destroyer", launched:"May 3, 1942", len:"376 feet", speed:"36.5 knots", crew:"273 officers and men", guns:"Five 5-inch guns, ten torpedo tubes", fact:"Lead ship of the most numerous destroyer class ever built — 175 Fletchers served in WWII.", rarity:"rare", cost:600},
+ {id:"uss_sullivans", name:"USS The Sullivans (DD-537)", nick:"The Brothers' Ship", type:"destroyer", cls:"Fletcher-class Destroyer", launched:"April 4, 1943", len:"376 feet", speed:"36.5 knots", crew:"273 officers and men", guns:"Five 5-inch guns, ten torpedo tubes", fact:"Named after the five Sullivan brothers who died together when USS Juneau was sunk. Now a museum ship in Buffalo, NY.", rarity:"rare", cost:700},
+ {id:"uss_lexington", name:"USS Lexington (CV-2)", nick:"Lady Lex", type:"carrier", cls:"Lexington-class Carrier", launched:"October 3, 1925", len:"888 feet", speed:"33.25 knots", crew:"2,122 officers and men", guns:"Eight 8-inch guns, 90 aircraft", fact:"One of the first large aircraft carriers. Lost at the Battle of the Coral Sea in May 1942.", rarity:"epic", cost:1000},
+ {id:"uss_indianapolis", name:"USS Indianapolis (CA-35)", nick:"Indy", type:"destroyer", cls:"Portland-class Heavy Cruiser", launched:"November 7, 1931", len:"610 feet", speed:"32.7 knots", crew:"1,195 officers and men", guns:"Nine 8-inch guns", fact:"Delivered components for the first atomic bomb to Tinian, and was lost only days later. Only 316 of her 1,195 crew survived.", rarity:"epic", cost:1000},
+ {id:"uss_yorktown_cv5", name:"USS Yorktown (CV-5)", nick:"The Fighting Lady", type:"carrier", cls:"Yorktown-class Carrier", launched:"April 4, 1936", len:"809 feet", speed:"32.5 knots", crew:"2,217 officers and men", guns:"Eight 5-inch guns, 90 aircraft", fact:"Played a crucial role at Midway despite heavy damage. Lost in the battle, but she helped turn the tide of the Pacific War.", rarity:"epic", cost:1200},
+ {id:"uss_hornet", name:"USS Hornet (CV-8)", nick:"The Hornet", type:"carrier", cls:"Yorktown-class Carrier", launched:"December 14, 1940", len:"809 feet", speed:"32.5 knots", crew:"2,919 officers and men", guns:"Eight 5-inch guns, 90 aircraft", fact:"Launched the Doolittle Raid on Tokyo in April 1942 — the first strike on the Japanese home islands.", rarity:"epic", cost:1200},
+ {id:"uss_nautilus", name:"USS Nautilus (SSN-571)", nick:"First Under the Pole", type:"sub", cls:"Nuclear Submarine", launched:"January 21, 1954", len:"323 feet", speed:"23 knots submerged", crew:"105 officers and men", guns:"Six torpedo tubes", fact:"The world's first operational nuclear-powered submarine, and the first vessel to cross the North Pole submerged.", rarity:"epic", cost:1200},
+ {id:"uss_iowa", name:"USS Iowa (BB-61)", nick:"The Big Stick", type:"battleship", cls:"Iowa-class Battleship", launched:"August 27, 1942", len:"887 feet", speed:"33 knots", crew:"1,921 officers and men", guns:"Nine 16-inch guns", fact:"Carried President Roosevelt to the Tehran Conference in 1943. Now a museum ship in Los Angeles.", rarity:"epic", cost:1500},
+ {id:"uss_new_jersey", name:"USS New Jersey (BB-62)", nick:"Big J", type:"battleship", cls:"Iowa-class Battleship", launched:"December 7, 1942", len:"887 feet", speed:"33 knots", crew:"1,921 officers and men", guns:"Nine 16-inch guns", fact:"The most decorated battleship in U.S. Navy history — WWII, Korea, Vietnam, and Lebanon.", rarity:"epic", cost:1500},
+ {id:"uss_enterprise_cv6", name:"USS Enterprise (CV-6)", nick:"The Big E", type:"carrier", cls:"Yorktown-class Carrier", launched:"October 3, 1936", len:"824 feet", speed:"32.5 knots", crew:"2,217 officers and men", guns:"Eight 5-inch guns, 90 aircraft", fact:"The most decorated U.S. Navy ship of WWII. She fought in more major actions against Japan than any other ship.", rarity:"legendary", cost:2500},
+ {id:"uss_missouri", name:"USS Missouri (BB-63)", nick:"Mighty Mo", type:"battleship", cls:"Iowa-class Battleship", launched:"January 29, 1944", len:"887 feet", speed:"33 knots", crew:"1,921 officers and men", guns:"Nine 16-inch guns", fact:"The Japanese surrender ending WWII was signed on her deck on September 2, 1945. She now rests at Pearl Harbor.", rarity:"legendary", cost:2500}
+];
+var RARITY_COLORS = { common:"#9d9d9d", uncommon:"#1eff00", rare:"#4fa8ff", epic:"#c579ff", legendary:"#ff8000" };
+/* Simple side-profile silhouettes, tinted by rarity. viewBox 0 0 120 44 */
+var SHIP_SVG = {
+ battleship:'<path d="M4 34 L12 26 L38 26 L40 20 L48 20 L48 14 L52 14 L52 8 L56 8 L56 20 L66 20 L66 24 L94 24 L98 28 L116 28 L110 38 L10 38 Z"/><rect x="20" y="21" width="12" height="5"/><rect x="70" y="19" width="12" height="5"/>',
+ carrier:'<path d="M2 30 L8 24 L112 24 L118 28 L110 38 L10 38 Z"/><rect x="14" y="24" width="100" height="3"/><rect x="78" y="12" width="12" height="12"/><rect x="82" y="8" width="3" height="6"/>',
+ destroyer:'<path d="M6 34 L14 27 L44 27 L46 21 L58 21 L58 16 L62 16 L62 21 L74 21 L76 25 L100 25 L104 29 L114 29 L108 38 L12 38 Z"/><rect x="30" y="22" width="9" height="5"/>',
+ sub:'<path d="M8 30 Q14 22 30 22 L92 22 Q108 22 112 29 Q108 36 92 36 L30 36 Q14 36 8 30 Z"/><rect x="52" y="10" width="14" height="13" rx="2"/><rect x="56" y="4" width="3" height="8"/>',
+ pt:'<path d="M10 33 L22 27 L78 27 L96 22 L112 22 L106 36 L16 36 Z"/><rect x="44" y="20" width="16" height="7" rx="2"/>',
+ plane:'<path d="M12 24 L40 20 L52 10 L58 10 L54 20 L84 18 L96 12 L100 14 L90 22 L104 24 L112 20 L114 24 L100 30 L54 30 L58 36 L52 36 L44 29 L14 28 Z"/>'
+};
+
+/* ============================ SAVE SYSTEM ================================== */
+/* Everything lives in localStorage under one key — the phone keeps it
+   even with no internet. Mirrors Global.gd's save_game.json. */
+var SAVE_KEY = "captains_deck_save_v1";
+var S = null;
+
+function defaultSave() {
+  return {
+    v: 1,
+    coins: 100,
+    streaks: { solitaire:0, blackjack:0, slots:0, war:0 },
+    hiddenLoss: { solitaire:0, blackjack:0, slots:0, war:0 },
+    bestStreak: 0,
+    stats: {
+      solWins:0, solPlayed:0, solBestSec:0,
+      bjWins:0, bjPlayed:0, bjBlackjacks:0, bjBiggestWin:0,
+      slotsSpins:0, slotsJackpots:0, slotsBiggestWin:0,
+      warWins:0, warPlayed:0, warWars:0,
+      coinsEarned:0
+    },
+    settings: {
+      cardScale: 1,      // 1 = normal, 2 = large, 3 = huge
+      fourColor: false,
+      drawCount: 1,
+      coach: true,
+      showCount: true,
+      sound: true,
+      slowAnim: false,
+      cardBack: "navy"
+    },
+    ships: ["uss_arizona"],
+    daily: { muster:"", solWin:"" },
+    solGame: null
+  };
+}
+
+function loadSave() {
+  S = defaultSave();
+  try {
+    var raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      var d = JSON.parse(raw);
+      // Merge saved values over defaults so future versions add fields safely
+      for (var k in d) {
+        if (k === "settings" || k === "stats" || k === "streaks" || k === "hiddenLoss" || k === "daily") {
+          for (var k2 in d[k]) { if (S[k].hasOwnProperty(k2)) S[k][k2] = d[k][k2]; }
+        } else if (S.hasOwnProperty(k)) {
+          S[k] = d[k];
+        }
+      }
+    }
+  } catch (e) { /* private mode or blocked storage — play with defaults */ }
+}
+
+var _saveTimer = null;
+function save() {
+  // Debounced like Global.gd's _queue_save
+  if (_saveTimer) return;
+  _saveTimer = setTimeout(function() {
+    _saveTimer = null;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
+  }, 400);
+}
+
+function todayStr() {
+  var d = new Date();
+  var m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + "-" + (m < 10 ? "0" + m : m) + "-" + (day < 10 ? "0" + day : day);
+}
+
+/* ============================ ECONOMY ====================================== */
+function addCoins(n, quiet) {
+  S.coins = Math.max(0, S.coins + n);
+  if (n > 0) S.stats.coinsEarned += n;
+  updateCoinDisplays();
+  if (!quiet && n > 0) sfx("coin");
+  save();
+}
+function canAfford(n) { return S.coins >= n; }
+function spendCoins(n) {
+  if (!canAfford(n)) return false;
+  S.coins -= n; updateCoinDisplays(); save(); return true;
+}
+function recordWin(game) {
+  S.streaks[game] += 1;
+  S.hiddenLoss[game] = 0;
+  if (S.streaks[game] > S.bestStreak) S.bestStreak = S.streaks[game];
+  save();
+}
+function recordLoss(game) {
+  S.streaks[game] = 0;
+  S.hiddenLoss[game] += 1;
+  save();
+}
+/* Dynamic Difficulty — after 3 straight losses the deck quietly leans his way.
+   Ported from Global.gd: max 60% help after 6 losses. */
+function shouldHelp(game) { return S.hiddenLoss[game] >= 3; }
+function helpIntensity(game) {
+  var losses = S.hiddenLoss[game];
+  if (losses < 3) return 0;
+  return Math.min(0.6, (losses - 2) * 0.15);
+}
+/* Navy Relief Fund: Grandpa can never go broke and lose access to the games. */
+function reliefFund() {
+  if (S.coins < 20) {
+    S.coins = 60;
+    updateCoinDisplays(); save();
+    toast("⚓ The Navy Relief Fund restocked your coffers, Captain — 60 coins.");
+  }
+}
+
+/* ============================ SOUND ========================================
+   Tiny synthesized sounds — no audio files, nothing to download. */
+var audioCtx = null;
+function ensureAudio() {
+  if (audioCtx || !S.settings.sound) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  } catch (e) {}
+}
+function tone(freq, start, dur, type, vol) {
+  if (!audioCtx) return;
+  try {
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    var t = audioCtx.currentTime + start;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol || 0.12, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  } catch (e) {}
+}
+function sfx(name) {
+  if (!S.settings.sound) return;
+  ensureAudio();
+  if (!audioCtx) return;
+  if (audioCtx.state === "suspended") { try { audioCtx.resume(); } catch (e) {} }
+  switch (name) {
+    case "tap":   tone(700, 0, 0.06, "sine", 0.07); break;
+    case "deal":  tone(300, 0, 0.05, "triangle", 0.1); tone(210, 0.02, 0.06, "triangle", 0.08); break;
+    case "flip":  tone(480, 0, 0.05, "sine", 0.09); tone(690, 0.05, 0.07, "sine", 0.09); break;
+    case "place": tone(520, 0, 0.05, "triangle", 0.1); break;
+    case "coin":  tone(1180, 0, 0.09, "sine", 0.1); tone(1560, 0.07, 0.12, "sine", 0.09); break;
+    case "bad":   tone(170, 0, 0.13, "triangle", 0.1); break;
+    case "war":   tone(160, 0, 0.2, "sawtooth", 0.08); tone(120, 0.15, 0.25, "sawtooth", 0.08); break;
+    case "win":
+      tone(523, 0.00, 0.16, "triangle", 0.12);
+      tone(659, 0.13, 0.16, "triangle", 0.12);
+      tone(784, 0.26, 0.16, "triangle", 0.12);
+      tone(1047, 0.39, 0.34, "triangle", 0.13);
+      break;
+    case "jackpot":
+      var notes = [523, 659, 784, 1047, 784, 1047, 1319];
+      for (var i = 0; i < notes.length; i++) tone(notes[i], i * 0.11, 0.14, "triangle", 0.12);
+      break;
+  }
+}
+
+/* ============================ CARD BASICS ================================== */
+var SUITS = ["♠", "♥", "♦", "♣"];             // 0 1 2 3
+var RANK_TXT = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+function suitColorClass(s) {
+  if (S.settings.fourColor) {
+    return s === 0 ? "c-blk" : s === 1 ? "c-red" : s === 2 ? "c-blu" : "c-grn";
+  }
+  return (s === 1 || s === 2) ? "c-red" : "c-blk";
+}
+function isRed(s) { return CaptainsDeck.isRed(s); }
+
+function makeDeck() { return CaptainsDeck.makeDeck(); }
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+/* Dealer.gd's create_rigged_deck: nudge high cards toward the draw positions. */
+function riggedShoe(numDecks, intensity) {
+  var deck = [];
+  for (var n = 0; n < numDecks; n++) deck = deck.concat(makeDeck());
+  shuffle(deck);
+  if (intensity <= 0) return deck;
+  var high = [], other = [];
+  for (var i = 0; i < deck.length; i++) {
+    if (deck[i].r >= 10 || deck[i].r === 1) high.push(deck[i]); else other.push(deck[i]);
+  }
+  shuffle(high); shuffle(other);
+  var out = [], hi = 0, oi = 0, favor = 0.35 + intensity * 0.3;
+  while (hi < high.length || oi < other.length) {
+    if (hi >= high.length) { out.push(other[oi++]); }
+    else if (oi >= other.length) { out.push(high[hi++]); }
+    else if (Math.random() < favor) { out.push(high[hi++]); }
+    else { out.push(other[oi++]); }
+  }
+  return out;
+}
+
+/* Build one card DOM node. w = width px. */
+function cardEl(card, w) {
+  var el = document.createElement("div");
+  var h = Math.round(w * 1.45);
+  el.className = "card " + (card.up ? suitColorClass(card.s) : "down");
+  el.style.width = w + "px";
+  el.style.height = h + "px";
+  if (card.up) {
+    var fm = scaleMult();
+    var corner = Math.max(15, Math.round(w * 0.30 * fm));
+    var big = Math.round(w * 0.60 * fm);
+    el.innerHTML =
+      '<div class="corner" style="font-size:' + corner + 'px">' +
+        '<span class="r">' + RANK_TXT[card.r] + '</span><span class="s">' + SUITS[card.s] + '</span>' +
+      '</div>' +
+      '<div class="big" style="font-size:' + big + 'px">' + SUITS[card.s] + '</div>';
+  } else {
+    el.style.fontSize = Math.round(w * 0.42) + "px";
+    CaptainsDeck.applyFaceDownBack(el, S.settings.cardBack);
+  }
+  return el;
+}
+
+/* ============================ UI HELPERS =================================== */
+function $(id) { return document.getElementById(id); }
+
+function updateCoinDisplays() {
+  var els = document.querySelectorAll(".coins-out");
+  for (var i = 0; i < els.length; i++) els[i].textContent = S.coins;
+  $("lobby-coins").textContent = S.coins;
+}
+
+var _toastTimer = null;
+function toast(msg, longer) {
+  var t = $("toast");
+  t.innerHTML = msg;
+  t.className = "show";
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { t.className = ""; }, longer ? 4200 : 2600);
+}
+
+function modal(title, bodyHtml, buttons, center) {
+  var m = $("modal");
+  var html = "<h2>" + title + "</h2><div class='mbody" + (center ? " center" : "") + "'>" + bodyHtml + "</div>";
+  m.innerHTML = html;
+  for (var i = 0; i < buttons.length; i++) {
+    (function(b) {
+      var btn = document.createElement("button");
+      btn.className = "btn " + (b.cls || "");
+      btn.innerHTML = b.label;
+      btn.addEventListener("click", function() {
+        closeModal();
+        if (b.fn) b.fn();
+      });
+      m.appendChild(btn);
+    })(buttons[i]);
+  }
+  $("modal-wrap").className = "show";
+}
+function closeModal() { $("modal-wrap").className = ""; }
+
+var currentScreen = "lobby";
+function showScreen(name) {
+  var scrs = document.querySelectorAll(".screen");
+  for (var i = 0; i < scrs.length; i++) scrs[i].className = "screen";
+  $("scr-" + name).className = "screen show";
+  currentScreen = name;
+  updateCoinDisplays();
+  if (name === "lobby") refreshLobby();
+  if (name === "fleet") renderFleet();
+  if (name === "settings") renderSettings();
+  if (name === "solitaire") solEnter();
+  if (name === "blackjack") bjEnter();
+  if (name === "slots") slEnter();
+  if (name === "war") warEnter();
+  // Hardware back button goes to the lobby instead of closing the game
+  try { history.pushState({ s: name }, "", "#" + name); } catch (e) {}
+}
+window.addEventListener("popstate", function() {
+  if (currentScreen !== "lobby") showScreen("lobby");
+});
+
+/* Animation speed helper */
+function animMs(ms) { return S.settings.slowAnim ? Math.round(ms * 1.7) : ms; }
+
+/* ============================ LOBBY ======================================== */
+function refreshLobby() {
+  updateCoinDisplays();
+  var best = S.bestStreak;
+  var w = S.stats.solWins + S.stats.bjWins + S.stats.warWins;
+  $("lobby-streak").textContent = best > 0
+    ? "Best win streak: " + best + "  ·  Total wins: " + w
+    : "Welcome aboard, Captain!";
+  var d = $("daily-btn");
+  if (S.daily.muster === todayStr()) {
+    d.className = "btn blue";
+    d.innerHTML = "✓ Daily Muster collected — see you tomorrow!";
+    d.disabled = true;
+  } else {
+    d.className = "btn pulse";
+    d.innerHTML = "⚓ DAILY MUSTER — collect 50 coins";
+    d.disabled = false;
+  }
+  reliefFund();
+}
+
+function collectDaily() {
+  if (S.daily.muster === todayStr()) return;
+  S.daily.muster = todayStr();
+  addCoins(50);
+  sfx("jackpot");
+  toast("⚓ Present and accounted for! +50 coins, Captain.");
+  refreshLobby();
+}
+
+/* ============================ FLEET ======================================== */
+function renderFleet() {
+  var owned = S.ships.length;
+  $("fl-progress").textContent = "Vessels in your fleet: " + owned + " of " + SHIPS.length;
+  var list = $("fl-list");
+  list.innerHTML = "";
+  for (var i = 0; i < SHIPS.length; i++) {
+    (function(ship) {
+      var have = S.ships.indexOf(ship.id) >= 0;
+      var el = document.createElement("div");
+      el.className = "shipcard" + (have ? "" : " locked");
+      var rc = RARITY_COLORS[ship.rarity];
+      var tint = have ? rc : "#5a6c7d";
+      el.innerHTML =
+        '<div class="shipart"><svg viewBox="0 0 120 44" fill="' + tint + '">' + SHIP_SVG[ship.type] + "</svg></div>" +
+        '<div><div class="sname">' + ship.name + "</div>" +
+        (ship.nick ? '<div class="snick">“' + ship.nick + '”</div>' : "") +
+        '<div class="srar" style="background:' + rc + '">' + ship.rarity.toUpperCase() + "</div></div>" +
+        '<div class="sact">' + (have
+          ? '<div class="owned">✓ In your<br>fleet</div>'
+          : '<button class="btn small">⚓ ' + ship.cost + "</button>") + "</div>";
+      el.addEventListener("click", function() { shipTapped(ship, have); });
+      list.appendChild(el);
+    })(SHIPS[i]);
+  }
+}
+
+function shipTapped(ship, have) {
+  sfx("tap");
+  if (have) {
+    var specs =
+      spec("Class", ship.cls) + spec("Launched", ship.launched) +
+      spec("Length", ship.len) + spec("Speed", ship.speed) +
+      spec("Crew", ship.crew) + spec("Armament", ship.guns) +
+      '<div class="funfact">' + ship.fact + "</div>";
+    modal(ship.name, specs, [{ label: "Back to the Fleet", cls: "blue" }]);
+  } else if (canAfford(ship.cost)) {
+    modal("Commission this vessel?",
+      "<b>" + ship.name + "</b>" + (ship.nick ? " — “" + ship.nick + "”" : "") +
+      "<br><br>Cost: <b>⚓ " + ship.cost + " coins</b><br>You have: ⚓ " + S.coins,
+      [
+        { label: "⚓ Commission her!", fn: function() {
+            if (spendCoins(ship.cost)) {
+              S.ships.push(ship.id);
+              sfx("jackpot");
+              toast("🚢 " + ship.name + " has joined your fleet, Captain!", true);
+              renderFleet();
+            }
+          } },
+        { label: "Not yet", cls: "blue" }
+      ], true);
+  } else {
+    toast("You need ⚓ " + ship.cost + " coins for this one, Captain. Win some more hands!");
+  }
+}
+function spec(k, v) {
+  if (!v) return "";
+  return '<div class="specline"><span class="k">' + k + '</span><span>' + v + "</span></div>";
+}
+
+/* ============================ SETTINGS ===================================== */
+function renderSettings() {
+  var m = $("st-main");
+  m.innerHTML = "";
+  m.appendChild(segRow("Card size", "Bigger cards are easier to read", [
+    { label: "Normal", val: 1 }, { label: "Large", val: 2 }, { label: "Huge", val: 3 }
+  ], S.settings.cardScale, function(v) { S.settings.cardScale = v; applyScale(); }));
+  m.appendChild(segRow("Solitaire draw", "How many cards each draw turns over", [
+    { label: "Draw 1", val: 1 }, { label: "Draw 3", val: 3 }
+  ], S.settings.drawCount, function(v) { S.settings.drawCount = v; }));
+  m.appendChild(cardBackRow());
+  m.appendChild(togRow("Easy-to-see suits", "Diamonds turn blue and clubs turn green", "fourColor"));
+  m.appendChild(togRow("Blackjack coach", "Friendly advice on every hand", "coach"));
+  m.appendChild(togRow("Show the card count", "The running Hi-Lo count, like a real counter", "showCount"));
+  m.appendChild(togRow("Sounds", "Clicks, cards, and victory horns", "sound"));
+  m.appendChild(togRow("Slower animations", "Give the cards time to breathe", "slowAnim"));
+
+  var reset = document.createElement("button");
+  reset.className = "btn red";
+  reset.style.maxWidth = "460px";
+  reset.style.margin = "18px auto 8px";
+  reset.textContent = "Start over — erase all progress";
+  reset.addEventListener("click", function() {
+    modal("Start over?", "This erases coins, the fleet, and all records. There is no way back.", [
+      { label: "Yes — erase everything", cls: "red", fn: function() {
+          try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+          loadSave(); applyScale(); updateCoinDisplays();
+          toast("Fresh start, Captain. Welcome back aboard.");
+          showScreen("lobby");
+        } },
+      { label: "No — keep my progress", cls: "blue" }
+    ], true);
+  });
+  m.appendChild(reset);
+
+  var about = document.createElement("div");
+  about.className = "dedication";
+  about.innerHTML = "The Captain's Deck v1.1<br>Made for Grandpa Ralph with love.<br>No ads · no tracking · no internet needed.";
+  m.appendChild(about);
+}
+
+function togRow(title, desc, key) {
+  var row = document.createElement("div");
+  row.className = "setrow";
+  row.innerHTML = '<div class="slab"><div class="t">' + title + '</div><div class="d">' + desc + "</div></div>";
+  var b = document.createElement("button");
+  b.className = "togbtn" + (S.settings[key] ? " on" : "");
+  b.textContent = S.settings[key] ? "ON" : "OFF";
+  b.addEventListener("click", function() {
+    S.settings[key] = !S.settings[key];
+    b.className = "togbtn" + (S.settings[key] ? " on" : "");
+    b.textContent = S.settings[key] ? "ON" : "OFF";
+    sfx("tap"); save();
+  });
+  row.appendChild(b);
+  return row;
+}
+
+function segRow(title, desc, opts, current, onSet) {
+  var row = document.createElement("div");
+  row.className = "setrow";
+  row.innerHTML = '<div class="slab"><div class="t">' + title + '</div><div class="d">' + desc + "</div></div>";
+  var seg = document.createElement("div");
+  seg.className = "segrow";
+  for (var i = 0; i < opts.length; i++) {
+    (function(o) {
+      var b = document.createElement("button");
+      b.className = "segbtn" + (o.val === current ? " on" : "");
+      b.textContent = o.label;
+      b.addEventListener("click", function() {
+        var sibs = seg.querySelectorAll(".segbtn");
+        for (var j = 0; j < sibs.length; j++) sibs[j].className = "segbtn";
+        b.className = "segbtn on";
+        onSet(o.val); sfx("tap"); save();
+      });
+      seg.appendChild(b);
+    })(opts[i]);
+  }
+  row.appendChild(seg);
+  return row;
+}
+
+function applyScale() {
+  document.body.className = S.settings.cardScale === 2 ? "scale-lg" : S.settings.cardScale === 3 ? "scale-xl" : "";
+}
+
+function chosenCardBack() {
+  return CaptainsDeck.normalizeCardBackId(S.settings.cardBack);
+}
+
+function setCardBack(id) {
+  S.settings.cardBack = CaptainsDeck.normalizeCardBackId(id);
+  save();
+  if (currentScreen === "solitaire" && sol) solRenderAll();
+  if (currentScreen === "blackjack") bjRender();
+  if (currentScreen === "war") {
+    var them = $("war-them").querySelector(".card.down");
+    var you = $("war-you").querySelector(".card.down");
+    if (them) CaptainsDeck.applyFaceDownBack(them, S.settings.cardBack);
+    if (you) CaptainsDeck.applyFaceDownBack(you, S.settings.cardBack);
+  }
+}
+
+function cardBackRow() {
+  var row = document.createElement("div");
+  row.className = "setrow";
+  row.style.flexWrap = "wrap";
+  row.innerHTML = '<div class="slab" style="width:100%;padding-right:0;">' +
+    '<div class="t">Card backs</div>' +
+    '<div class="d">Navy default stays. Pinups are classic sailor sweethearts — clothed, never racy.</div></div>';
+  var gal = document.createElement("div");
+  gal.className = "back-gallery";
+  gal.id = "cardback-gallery";
+  var current = chosenCardBack();
+  var backs = CaptainsDeck.CARD_BACKS;
+  for (var i = 0; i < backs.length; i++) {
+    (function (back) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "back-pick" + (back.kind === "navy" ? " navy-swatch" : "") + (back.id === current ? " on" : "");
+      b.setAttribute("data-cardback", back.id);
+      b.setAttribute("aria-label", "Choose " + back.name + " card back");
+      if (back.src) {
+        b.style.backgroundImage = "url('" + back.src + "')";
+      }
+      b.addEventListener("click", function () {
+        setCardBack(back.id);
+        var sibs = gal.querySelectorAll(".back-pick");
+        for (var j = 0; j < sibs.length; j++) {
+          sibs[j].className = sibs[j].className.replace(" on", "");
+          if (sibs[j].getAttribute("data-cardback") === back.id) sibs[j].className += " on";
+        }
+        sfx("tap");
+        toast(back.kind === "navy" ? "Navy anchor back, Captain." : back.name + " — a sweetheart on every face-down card.");
+      });
+      gal.appendChild(b);
+    })(backs[i]);
+  }
+  row.appendChild(gal);
+  return row;
+}
+
+/* Card scale multiplier used by the table renderers */
+function scaleMult() { return S.settings.cardScale === 2 ? 1.12 : S.settings.cardScale === 3 ? 1.24 : 1; }
+
+/* ============================ SOLITAIRE ====================================
+   Klondike, the grandpa-friendly way:
+   - Tap a card, then tap where it should go. Tap it again to send it up
+     to the foundations. No precise dragging required.
+   - Unlimited undo, unlimited passes through the stock, free hints.
+   - The game in progress is saved, so closing the app never loses a deal.  */
+var sol = null;
+var solTimerInt = null;
+
+function solEnter() {
+  if (sol && sol.won) { solNew(); return; }
+  if (!sol) {
+    if (S.solGame) { solRestore(S.solGame); }
+    else { solNew(); return; }
+  }
+  solStartTimer();
+  solRenderAll();
+}
+
+function solNew() {
+  // Leaving a half-played deal counts as a quiet loss (feeds the helper)
+  if (sol && !sol.won && sol.moves >= 5) { recordLoss("solitaire"); S.stats.solPlayed++; }
+
+  var deck = shuffle(makeDeck());
+  // After a rough patch, re-shuffle until the opening looks friendlier:
+  // aces near the surface make for a warmer welcome.
+  if (shouldHelp("solitaire")) {
+    for (var attempt = 0; attempt < 40; attempt++) {
+      if (solOpeningAces(deck) >= 2) break;
+      deck = shuffle(makeDeck());
+    }
+  }
+
+  sol = CaptainsDeck.dealKlondike(deck);
+  sol.undo = [];
+  sol.sel = null;
+  sol.won = false;
+  sol.autoRun = false;
+
+  solPersist();
+  solStartTimer();
+  solRenderAll();
+  sfx("deal");
+}
+
+/* How many aces would be visible early with this deck order?
+   Face-up deal positions are fixed: 0,2,5,9,14,20,27; stock top is the tail. */
+function solOpeningAces(deck) {
+  var spots = [0, 2, 5, 9, 14, 20, 27, 51, 50, 49, 48, 47, 46];
+  var n = 0;
+  for (var i = 0; i < spots.length; i++) if (deck[spots[i]].r === 1) n++;
+  return n;
+}
+
+function solStartTimer() {
+  if (solTimerInt) clearInterval(solTimerInt);
+  solTimerInt = setInterval(function() {
+    if (currentScreen === "solitaire" && sol && !sol.won && !document.hidden) {
+      sol.secs++;
+      $("sol-time").textContent = fmtTime(sol.secs);
+    }
+  }, 1000);
+}
+function fmtTime(secs) {
+  var m = Math.floor(secs / 60), s = secs % 60;
+  return m + ":" + (s < 10 ? "0" + s : s);
+}
+
+/* ---- persistence ---- */
+function solPack() { return CaptainsDeck.klondikeSnapshot(sol); }
+function solUnpackPile(a) { return CaptainsDeck.unpackPile(a); }
+function solRestore(d) {
+  sol = {
+    stock: [], waste: [], found: [[],[],[],[]], tab: [[],[],[],[],[],[],[]],
+    moves: 0, secs: 0, undo: [], sel: null, won: false, autoRun: false
+  };
+  CaptainsDeck.klondikeRestore(sol, d);
+  sol.undo = [];
+  sol.won = false;
+  sol.autoRun = false;
+}
+function solPersist() {
+  S.solGame = sol && !sol.won ? solPack() : null;
+  save();
+}
+
+/* ---- pile lookups ---- */
+function solPile(key) {
+  if (key === "s") return sol.stock;
+  if (key === "w") return sol.waste;
+  if (key.charAt(0) === "f") return sol.found[+key.charAt(1)];
+  return sol.tab[+key.charAt(1)];
+}
+
+/* ---- rendering ---- */
+function solMetrics() {
+  var table = $("sol-table");
+  var w = table.clientWidth - 8;         // padding
+  var colW = Math.floor(w / 7) - 4;      // margins
+  return { cw: colW, ch: Math.round(colW * 1.45) };
+}
+
+function solRenderAll() {
+  if (!sol) return;
+  var m = solMetrics();
+  solRenderStock(m); solRenderWaste(m);
+  for (var f = 0; f < 4; f++) solRenderFound(f, m);
+  for (var t = 0; t < 7; t++) solRenderTab(t, m);
+  $("sol-moves").textContent = "Moves: " + sol.moves;
+  $("sol-time").textContent = fmtTime(sol.secs);
+  var streak = S.streaks.solitaire;
+  $("sol-score").textContent = streak > 0 ? "Streak: " + streak : "";
+  solUpdateAutoBtn();
+}
+
+function solRenderStock(m) {
+  var el = $("sol-stock");
+  el.innerHTML = "";
+  el.style.height = m.ch + "px";
+  if (sol.stock.length > 0) {
+    var c = cardEl({ r:1, s:0, up:false }, m.cw);
+    c.setAttribute("data-p", "s");
+    el.appendChild(c);
+  } else {
+    var ph = document.createElement("div");
+    ph.className = "ph";
+    ph.style.height = m.ch + "px";
+    ph.style.fontSize = Math.round(m.cw * 0.5) + "px";
+    ph.textContent = sol.waste.length ? "↺" : "";
+    ph.setAttribute("data-p", "s");
+    el.appendChild(ph);
+  }
+}
+
+function solRenderWaste(m) {
+  var el = $("sol-waste");
+  el.innerHTML = "";
+  el.style.height = m.ch + "px";
+  var n = sol.waste.length;
+  if (n === 0) {
+    el.appendChild(solPh(m, ""));
+    return;
+  }
+  // show up to 3 fanned so a Draw-3 hand is readable
+  var show = Math.min(S.settings.drawCount === 3 ? 3 : 1, n);
+  for (var i = 0; i < show; i++) {
+    var idx = n - show + i;
+    var c = cardEl(sol.waste[idx], m.cw);
+    c.style.left = Math.round(i * m.cw * 0.35) + "px";
+    c.style.zIndex = i + 1;
+    if (idx === n - 1) {
+      c.setAttribute("data-p", "w");
+      c.setAttribute("data-i", idx);
+      if (solSelIs("w", idx)) c.className += " sel";
+    }
+    el.appendChild(c);
+  }
+}
+
+function solPh(m, text) {
+  var ph = document.createElement("div");
+  ph.className = "ph";
+  ph.style.height = m.ch + "px";
+  ph.style.fontSize = Math.round(m.cw * 0.42) + "px";
+  ph.textContent = text;
+  return ph;
+}
+
+function solRenderFound(f, m) {
+  var el = $("sol-f" + f);
+  el.innerHTML = "";
+  el.style.height = m.ch + "px";
+  var pile = sol.found[f];
+  if (pile.length === 0) {
+    var ph = solPh(m, "A");
+    ph.setAttribute("data-p", "f" + f);
+    el.appendChild(ph);
+  } else {
+    var c = cardEl(pile[pile.length - 1], m.cw);
+    c.setAttribute("data-p", "f" + f);
+    c.setAttribute("data-i", pile.length - 1);
+    if (solSelIs("f" + f, pile.length - 1)) c.className += " sel";
+    el.appendChild(c);
+  }
+  if (sol.sel && solValidDest(solSelCards(), "f" + f)) el.className = "slot fnd target";
+  else el.className = "slot fnd";
+}
+
+function solRenderTab(t, m) {
+  var el = $("sol-t" + t);
+  el.innerHTML = "";
+  var pile = sol.tab[t];
+  var downOv = Math.round(m.ch * 0.15);
+  var upOv = Math.round(m.ch * 0.34);
+  var y = 0;
+  if (pile.length === 0) {
+    var ph = solPh(m, "K");
+    ph.setAttribute("data-p", "t" + t);
+    el.appendChild(ph);
+    el.style.height = (m.ch + 6) + "px";
+  } else {
+    for (var i = 0; i < pile.length; i++) {
+      var c = cardEl(pile[i], m.cw);
+      c.style.top = y + "px";
+      c.style.zIndex = i + 1;
+      c.setAttribute("data-p", "t" + t);
+      c.setAttribute("data-i", i);
+      if (solSelIs("t" + t, i)) c.className += " sel";
+      el.appendChild(c);
+      y += pile[i].up ? upOv : downOv;
+    }
+    el.style.height = (y - (pile[pile.length-1].up ? upOv : downOv) + m.ch + 6) + "px";
+  }
+  if (sol.sel && solValidDest(solSelCards(), "t" + t)) el.className = "slot tab target";
+  else el.className = "slot tab";
+}
+
+/* ---- selection helpers ---- */
+function solSelIs(p, i) {
+  return sol.sel && sol.sel.p === p && i >= sol.sel.i;
+}
+function solSelCards() {
+  if (!sol.sel) return [];
+  return solPile(sol.sel.p).slice(sol.sel.i);
+}
+
+/* Is this run droppable on pile `dest`? */
+function solValidDest(cards, dest) {
+  if (!cards.length || !sol.sel) return false;
+  if (dest === sol.sel.p) return false;
+  if (dest.charAt(0) === "f") return CaptainsDeck.klondikeCanPlace(cards, solPile(dest), "foundation");
+  if (dest.charAt(0) === "t") return CaptainsDeck.klondikeCanPlace(cards, solPile(dest), "tableau");
+  return false;
+}
+
+/* ---- game actions ---- */
+function solSnapshot() {
+  sol.undo.push(solPack());
+  if (sol.undo.length > 300) sol.undo.shift();
+}
+
+function solDraw() {
+  if (sol.autoRun) return;
+  solSnapshot();
+  sol.sel = null;
+  var drawResult = CaptainsDeck.klondikeDraw(sol, S.settings.drawCount);
+  if (!drawResult.drew && !drawResult.recycled) { sol.undo.pop(); return; }
+  if (drawResult.recycled) sfx("flip");
+  else sfx("deal");
+  sol.moves++;
+  solPersist();
+  solRenderAll();
+}
+
+function solTrySelect(p, i) {
+  var pile = solPile(p);
+  if (p.charAt(0) === "t") {
+    if (i < 0 || i >= pile.length) return false;
+    if (!pile[i].up) return false;
+    sol.sel = { p: p, i: i };
+    sfx("tap");
+    return true;
+  }
+  if (p === "w" || p.charAt(0) === "f") {
+    if (pile.length === 0 || i !== pile.length - 1) return false;
+    sol.sel = { p: p, i: i };
+    sfx("tap");
+    return true;
+  }
+  return false;
+}
+
+function solMoveSel(dest) {
+  var cards = solSelCards();
+  if (!solValidDest(cards, dest)) return false;
+  solSnapshot();
+  var src = solPile(sol.sel.p);
+  src.splice(sol.sel.i, cards.length);
+  var d = solPile(dest);
+  for (var i = 0; i < cards.length; i++) d.push(cards[i]);
+  // reveal what was underneath
+  if (sol.sel.p.charAt(0) === "t" && src.length && !src[src.length-1].up) {
+    src[src.length - 1].up = true;
+    sfx("flip");
+  }
+  sol.sel = null;
+  sol.moves++;
+  sfx("place");
+  solPersist();
+  solRenderAll();
+  solCheckWin();
+  return true;
+}
+
+/* One tap does the most helpful thing it can. */
+function solTap(p, i) {
+  if (!sol || sol.won || sol.autoRun) return;
+  if (p === "s") { solDraw(); return; }
+
+  if (sol.sel) {
+    // Second tap on the same card: try sending it to a foundation
+    if (sol.sel.p === p && sol.sel.i === i) {
+      var cards = solSelCards();
+      if (cards.length === 1) {
+        for (var f = 0; f < 4; f++) {
+          if (solValidDest(cards, "f" + f)) { solMoveSel("f" + f); return; }
+        }
+      }
+      sol.sel = null;
+      solRenderAll();
+      return;
+    }
+    if (solValidDest(solSelCards(), p)) { solMoveSel(p); return; }
+    // Not a valid drop — switch selection if possible (forgiving input)
+    var prev = sol.sel;
+    if (solTrySelect(p, i)) { solRenderAll(); return; }
+    sol.sel = prev;
+    solShake(p);
+    return;
+  }
+
+  // Nothing selected yet: tapping a foundation-ready card sends it straight up
+  if (solTrySelect(p, i)) {
+    var cs = solSelCards();
+    if (cs.length === 1 && p !== "f0" && p !== "f1" && p !== "f2" && p !== "f3") {
+      for (var f2 = 0; f2 < 4; f2++) {
+        if (solValidDest(cs, "f" + f2)) { solMoveSel("f" + f2); return; }
+      }
+    }
+    solRenderAll();
+  }
+}
+
+function solShake(p) {
+  var host = p === "w" ? $("sol-waste") : p.charAt(0) === "f" ? $("sol-f" + p.charAt(1)) : p.charAt(0) === "t" ? $("sol-t" + p.charAt(1)) : null;
+  if (!host) return;
+  host.className += " shake";
+  sfx("bad");
+  setTimeout(function() { host.className = host.className.replace(" shake", ""); }, 320);
+}
+
+function solUndo() {
+  if (!sol || sol.autoRun) return;
+  if (!sol.undo.length) { toast("Nothing to undo, Captain."); return; }
+  var d = sol.undo.pop();
+  var undoStack = sol.undo;
+  solRestore(d);
+  sol.undo = undoStack;
+  sfx("flip");
+  solPersist();
+  solRenderAll();
+}
+
+/* ---- hints ---- */
+function solHint() {
+  if (!sol || sol.won || sol.autoRun) return;
+  sol.sel = null;
+  var m;
+
+  // 1. Anything ready for the foundations?
+  m = solFindFoundationMove();
+  if (m) { solFlash(m.p, m.i); toast(solCardName(m.card) + " can go up to the foundation, Captain."); return; }
+
+  // 2. A tableau move that uncovers a hidden card
+  for (var t = 0; t < 7; t++) {
+    var pile = sol.tab[t];
+    var fu = solFirstUp(pile);
+    if (fu < 0) continue;
+    if (fu === 0 && pile[0].r === 13) continue;   // king already on its floor
+    var run = pile.slice(fu);
+    for (var t2 = 0; t2 < 7; t2++) {
+      if (t2 === t) continue;
+      if (solValidDestRaw(run, "t" + t2)) {
+        solFlash("t" + t, fu);
+        toast(solCardName(pile[fu]) + " can sail over to column " + (t2 + 1) + ".");
+        return;
+      }
+    }
+  }
+
+  // 3. Waste card onto the tableau
+  if (sol.waste.length) {
+    var wtop = [sol.waste[sol.waste.length - 1]];
+    for (var t3 = 0; t3 < 7; t3++) {
+      if (solValidDestRaw(wtop, "t" + t3)) {
+        solFlash("w", sol.waste.length - 1);
+        toast(solCardName(wtop[0]) + " from the waste fits on column " + (t3 + 1) + ".");
+        return;
+      }
+    }
+  }
+
+  // 4. Otherwise: draw
+  if (sol.stock.length || sol.waste.length) {
+    var st = $("sol-stock").firstChild;
+    if (st) { st.className += " hintflash"; }
+    toast("Draw from the stock, Captain. Something good may surface.");
+    return;
+  }
+  toast("No moves in sight. Undo a few steps, or deal a fresh game.");
+}
+
+function solFindFoundationMove() {
+  if (sol.waste.length) {
+    var w = [sol.waste[sol.waste.length - 1]];
+    for (var f = 0; f < 4; f++) if (solValidDestRaw(w, "f" + f)) return { p:"w", i:sol.waste.length-1, card:w[0] };
+  }
+  for (var t = 0; t < 7; t++) {
+    var pile = sol.tab[t];
+    if (!pile.length) continue;
+    var c = [pile[pile.length - 1]];
+    for (var f2 = 0; f2 < 4; f2++) if (solValidDestRaw(c, "f" + f2)) return { p:"t"+t, i:pile.length-1, card:c[0] };
+  }
+  return null;
+}
+
+/* validity check that doesn't depend on sol.sel */
+function solValidDestRaw(cards, dest) {
+  if (dest.charAt(0) === "f") return CaptainsDeck.klondikeCanPlace(cards, solPile(dest), "foundation");
+  if (dest.charAt(0) === "t") return CaptainsDeck.klondikeCanPlace(cards, solPile(dest), "tableau");
+  return false;
+}
+
+function solFirstUp(pile) {
+  for (var i = 0; i < pile.length; i++) if (pile[i].up) return i;
+  return -1;
+}
+
+function solCardName(c) { return "The " + RANK_TXT[c.r] + SUITS[c.s]; }
+
+function solFlash(p, i) {
+  var host = p === "w" ? $("sol-waste") : p.charAt(0) === "t" ? $("sol-t" + p.charAt(1)) : null;
+  if (!host) return;
+  var els = host.querySelectorAll(".card");
+  var target = p === "w" ? els[els.length - 1] : els[i];
+  if (target) target.className += " hintflash";
+}
+
+/* ---- auto-finish ---- */
+function solAutoAvailable() {
+  if (!sol || sol.won) return false;
+  if (sol.stock.length || sol.waste.length) return false;
+  var any = false;
+  for (var t = 0; t < 7; t++) {
+    var pile = sol.tab[t];
+    if (pile.length) any = true;
+    for (var i = 0; i < pile.length; i++) if (!pile[i].up) return false;
+  }
+  return any;
+}
+function solUpdateAutoBtn() {
+  $("sol-auto").className = solAutoAvailable() ? "btn show" : "btn";
+}
+function solAutoFinish() {
+  if (!solAutoAvailable()) return;
+  sol.autoRun = true;
+  sol.sel = null;
+  var step = function() {
+    var moved = false;
+    for (var t = 0; t < 7 && !moved; t++) {
+      var pile = sol.tab[t];
+      if (!pile.length) continue;
+      var c = [pile[pile.length - 1]];
+      for (var f = 0; f < 4; f++) {
+        if (solValidDestRaw(c, "f" + f)) {
+          pile.pop();
+          sol.found[f].push(c[0]);
+          sol.moves++;
+          sfx("place");
+          moved = true;
+          break;
+        }
+      }
+    }
+    solRenderAll();
+    if (moved) { setTimeout(step, animMs(120)); }
+    else { sol.autoRun = false; solCheckWin(); }
+  };
+  step();
+}
+
+/* ---- winning ---- */
+function solCheckWin() {
+  solUpdateAutoBtn();
+  var total = sol.found[0].length + sol.found[1].length + sol.found[2].length + sol.found[3].length;
+  if (total < 52 || sol.won) return;
+  sol.won = true;
+  S.solGame = null;
+  S.stats.solPlayed++;
+  S.stats.solWins++;
+  if (!S.stats.solBestSec || sol.secs < S.stats.solBestSec) S.stats.solBestSec = sol.secs;
+  recordWin("solitaire");
+  var streak = S.streaks.solitaire;
+  var reward = 200 + Math.min(100, (streak - 1) * 25);
+  var dailyBonus = 0;
+  if (S.daily.solWin !== todayStr()) {
+    S.daily.solWin = todayStr();
+    dailyBonus = 100;
+  }
+  addCoins(reward + dailyBonus, true);
+  sfx("jackpot");
+  solCascade();
+  var body = "Moves: <b>" + sol.moves + "</b> &nbsp;·&nbsp; Time: <b>" + fmtTime(sol.secs) + "</b><br>" +
+    "Reward: <b>⚓ " + reward + "</b>" +
+    (dailyBonus ? "<br>Daily Challenge complete: <b>⚓ +" + dailyBonus + "</b>" : "") +
+    (streak > 1 ? "<br>Win streak: <b>" + streak + " in a row!</b>" : "");
+  setTimeout(function() {
+    modal("⚓ VICTORY, CAPTAIN! ⚓", body, [
+      { label: "Deal another game", fn: function() { solNew(); } },
+      { label: "Back to the lobby", cls: "blue", fn: function() { showScreen("lobby"); } }
+    ], true);
+  }, animMs(1400));
+  save();
+}
+
+/* The classic falling-cards celebration, done with cheap CSS transforms. */
+function solCascade() {
+  var fx = $("fxlayer");
+  fx.innerHTML = "";
+  var m = solMetrics();
+  var srcs = [];
+  for (var f = 0; f < 4; f++) {
+    var host = $("sol-f" + f);
+    var r = host.getBoundingClientRect();
+    for (var i = 0; i < 13; i++) srcs.push({ x:r.left, y:r.top, card:sol.found[f][i] });
+  }
+  for (var k = 0; k < srcs.length; k++) {
+    (function(item, idx) {
+      var c = cardEl(item.card, m.cw);
+      c.style.position = "fixed";
+      c.style.left = item.x + "px";
+      c.style.top = item.y + "px";
+      c.style.zIndex = 500 + idx;
+      fx.appendChild(c);
+      var dx = (Math.random() - 0.5) * window.innerWidth * 1.2;
+      var rot = (Math.random() - 0.5) * 900;
+      var dur = 900 + Math.random() * 700;
+      setTimeout(function() {
+        c.style.transitionDuration = dur + "ms";
+        c.style.transform = "translate(" + dx + "px, " + (window.innerHeight + 200) + "px) rotate(" + rot + "deg)";
+      }, 30 + idx * 26);
+    })(srcs[k], k);
+  }
+  setTimeout(function() { fx.innerHTML = ""; }, 3200);
+}
+
+/* ---- input wiring (event delegation keeps it fast on old phones) ---- */
+function solFindTarget(node) {
+  while (node && node !== document.body) {
+    if (node.getAttribute && node.getAttribute("data-p")) return node;
+    node = node.parentNode;
+  }
+  return null;
+}
+function solWire() {
+  $("sol-table").addEventListener("click", function(e) {
+    var t = solFindTarget(e.target);
+    if (!t) {
+      if (sol && sol.sel) { sol.sel = null; solRenderAll(); }
+      return;
+    }
+    var p = t.getAttribute("data-p");
+    var i = t.getAttribute("data-i");
+    solTap(p, i === null ? -1 : +i);
+  });
+  $("sol-new").addEventListener("click", function() {
+    if (sol && sol.moves > 2 && !sol.won) {
+      modal("Deal a new game?", "This deal will be set aside.", [
+        { label: "Yes, fresh deal", fn: solNew },
+        { label: "Keep playing", cls: "blue" }
+      ], true);
+    } else solNew();
+  });
+  $("sol-undo").addEventListener("click", solUndo);
+  $("sol-hint").addEventListener("click", solHint);
+  $("sol-auto").addEventListener("click", solAutoFinish);
+}
+solWire();
+var _rsz = null;
+window.addEventListener("resize", function() {
+  if (_rsz) clearTimeout(_rsz);
+  _rsz = setTimeout(function() {
+    if (currentScreen === "solitaire") solRenderAll();
+  }, 160);
+});
+
+/* ============================ BLACKJACK ====================================
+   The Card Counter's Academy, ported from BlackjackGame.gd +
+   BlackjackStrategy.gd: full basic strategy, Hi-Lo count, count deviations,
+   bet advice, and the coach's nautical voice. Blackjack pays 3:2.         */
+
+/* Basic Strategy Matrix — columns are dealer upcard 2,3,4,5,6,7,8,9,10,A.
+   H=Hit S=Stand D=Double R=Surrender(played as Hit at this friendly table) */
+var BJ_HARD = {
+  9:  "HDDDDHHHHH", 10: "DDDDDDDDHH", 11: "DDDDDDDDDH",
+  12: "HHSSSHHHHH", 13: "SSSSSHHHHH", 14: "SSSSSHHHHH",
+  15: "SSSSSHHHRH", 16: "SSSSSHHRRR"
+};
+var BJ_SOFT = {
+  13: "HHHDDHHHHH", 14: "HHHDDHHHHH", 15: "HHDDDHHHHH", 16: "HHDDDHHHHH",
+  17: "HDDDDHHHHH", 18: "SDDDDSSHHH", 19: "SSSSSSSSSS", 20: "SSSSSSSSSS", 21: "SSSSSSSSSS"
+};
+
+var bj = { shoe:[], run:0, state:"bet", bet:0, lastBet:0,
+           player:[], dealer:[], resolvedMsg:"" };
+
+function bjEnter() {
+  if (!bj.shoe.length) bjNewShoe(false);
+  bjRender();
+  bjSetCoach(bj.state === "bet" ? "Welcome aboard, Captain. Place your bet." : bj.resolvedMsg || "Your move, Captain.");
+}
+
+function bjNewShoe(announce) {
+  var intensity = shouldHelp("blackjack") ? helpIntensity("blackjack") : 0;
+  bj.shoe = riggedShoe(6, intensity);
+  bj.run = 0;
+  if (announce) toast("Fresh shoe — six decks, shuffled and squared away.");
+}
+
+function bjDrawCard(faceUp) {
+  if (bj.shoe.length === 0) bjNewShoe(true);
+  var c = bj.shoe.shift();          // rigged shoes stack the good news up front
+  c.up = faceUp;
+  if (faceUp) bjCount(c);
+  return c;
+}
+function bjCount(c) {
+  if (c.r >= 2 && c.r <= 6) bj.run += 1;
+  else if (c.r >= 10 || c.r === 1) bj.run -= 1;
+}
+function bjTrueCount() {
+  var decksLeft = Math.max(1, bj.shoe.length / 52);
+  return bj.run / decksLeft;
+}
+
+function bjVal(cards, visibleOnly) {
+  var src = cards;
+  if (visibleOnly) {
+    src = [];
+    for (var i = 0; i < cards.length; i++) if (cards[i].up) src.push(cards[i]);
+  }
+  return CaptainsDeck.bjHandValue(src);
+}
+function bjIsBJ(cards) { return CaptainsDeck.bjIsNatural(cards); }
+
+/* ---- strategy + coaching ---- */
+function bjUpVal(c) { return c.r === 1 ? 11 : (c.r > 10 ? 10 : c.r); }
+
+function bjStrategy(cards, dealerUp, canDouble) {
+  var hv = bjVal(cards, false);
+  var du = bjUpVal(dealerUp);
+  var col = du - 2;
+  var act;
+  if (hv.soft && hv.total === 12) act = "H";                 // A,A territory
+  else if (hv.soft && BJ_SOFT[hv.total]) act = BJ_SOFT[hv.total].charAt(col);
+  else if (hv.total <= 8) act = "H";
+  else if (hv.total >= 17) act = "S";
+  else act = BJ_HARD[hv.total].charAt(col);
+  if (act === "R") act = "H";
+  if (act === "D" && (!canDouble || cards.length > 2)) act = "H";
+  return act;
+}
+
+function bjCoachMsg(act, total, du, soft) {
+  var ds = du === 11 ? "Ace" : String(du);
+  if (act === "H") {
+    if (total <= 11) return "Hit! You can't bust with " + total + ", and you need more to beat the dealer.";
+    if (du >= 7) return "Hit! The dealer's " + ds + " is strong. You need to improve your " + total + ".";
+    return "Hit! Your " + total + " isn't quite enough. Take another card, Captain.";
+  }
+  if (act === "S") {
+    if (total >= 17) return "Stand! " + total + " is solid. Let the dealer take the risk.";
+    if (du <= 6) return "Stand! The dealer's " + ds + " is weak. They might bust!";
+    return "Stand! Your " + total + " should hold. Trust the odds, Captain.";
+  }
+  if (act === "D") {
+    if (total === 11) return "Double Down! 11 is the best hand to double. Go big, Captain!";
+    if (total === 10) return "Double Down! 10 against the dealer's " + ds + " is a money-maker!";
+    if (soft) return "Double Down! Your soft " + total + " is flexible. Press your advantage!";
+    return "Double Down! The odds favor doubling here. Fortune favors the bold!";
+  }
+  return "";
+}
+
+/* Count-based deviation plays — the Academy's graduate course */
+function bjDeviation(tc, total, du, canDouble) {
+  if (tc >= 3) {
+    if (total === 16 && du === 10) return { act:"S", msg:"Count is high (+" + tc.toFixed(1) + "). Stand on 16 against a 10 — the small cards are used up!" };
+    if (total === 15 && du === 10) return { act:"S", msg:"Count is high. Standing on 15 is the better play here." };
+    if (total === 10 && du === 10 && canDouble) return { act:"D", msg:"Hot deck! Double that 10 against the dealer's 10!" };
+  } else if (tc <= -2) {
+    if (total === 12 && du === 4) return { act:"H", msg:"Count is cold (" + tc.toFixed(1) + "). Hit the 12 — the deck is thin on tens." };
+    if (total === 13 && du === 2) return { act:"H", msg:"Count is low. Take the chance and hit, Captain." };
+  }
+  return null;
+}
+
+function bjBetAdvice(tc) {
+  if (tc >= 4) return "Deck is HOT! Maximum bet recommended, Captain!";
+  if (tc >= 3) return "Very favorable count. Bet big!";
+  if (tc >= 2) return "Count is good. Raise your bet.";
+  if (tc >= 1) return "Slightly favorable. Consider raising.";
+  if (tc <= -2) return "Cold deck. Minimum bet — protect your bankroll.";
+  if (tc <= -1) return "Count is unfavorable. Stick to the minimum.";
+  return "Neutral count. Standard bet.";
+}
+
+/* ---- rendering ---- */
+function bjRenderZone(id, cards) {
+  var host = $(id);
+  host.innerHTML = "";
+  var zw = host.clientWidth || 300;
+  var n = Math.max(1, cards.length);
+  var cw = Math.min(96, Math.floor(zw / (1 + 0.55 * (n - 1))));
+  var step = Math.round(cw * 0.55);
+  var totalW = cw + step * (n - 1);
+  var x0 = Math.round((zw - totalW) / 2);
+  for (var i = 0; i < cards.length; i++) {
+    var el = cardEl(cards[i], cw);
+    el.style.left = (x0 + i * step) + "px";
+    el.style.top = "4px";
+    el.style.zIndex = i + 1;
+    host.appendChild(el);
+  }
+}
+
+function bjRender() {
+  bjRenderZone("bj-dealer", bj.dealer);
+  bjRenderZone("bj-player", bj.player);
+  var pv = bjVal(bj.player, false);
+  $("bj-pval").textContent = bj.player.length ? (pv.total + (pv.soft ? " (soft)" : "")) : "—";
+  var dv = bjVal(bj.dealer, true);
+  $("bj-dval").textContent = bj.dealer.length ? dv.total : "—";
+
+  var betting = (bj.state === "bet");
+  $("bj-betrow").style.display = betting ? "flex" : "none";
+  $("bj-nextrow").style.display = betting ? "flex" : "none";
+  $("bj-actrow").style.display = (bj.state === "player") ? "flex" : "none";
+  $("bj-betline").textContent = betting
+    ? (bj.bet > 0 ? "Bet: ⚓ " + bj.bet : (bj.lastBet ? "Tap DEAL to repeat your ⚓ " + bj.lastBet + " bet" : "Tap a chip to bet (10 to 500)"))
+    : "Bet: ⚓ " + bj.bet;
+  $("bj-deal").textContent = bj.bet > 0 ? "DEAL — ⚓ " + bj.bet : (bj.lastBet ? "DEAL — ⚓ " + bj.lastBet : "DEAL");
+
+  if (S.settings.showCount && (bj.player.length || bj.dealer.length || !betting)) {
+    var tc = bjTrueCount();
+    $("bj-count").textContent = "Count: " + (bj.run >= 0 ? "+" : "") + bj.run +
+      " (True: " + (tc >= 0 ? "+" : "") + tc.toFixed(1) + ")";
+  } else if (S.settings.showCount && betting) {
+    var tc2 = bjTrueCount();
+    $("bj-count").textContent = "Count: " + (bj.run >= 0 ? "+" : "") + bj.run + " — " + bjBetAdvice(tc2);
+  } else {
+    $("bj-count").textContent = "";
+  }
+
+  var canDouble = bj.state === "player" && bj.player.length === 2 && canAfford(bj.bet);
+  $("bj-double").disabled = !canDouble;
+  $("bj-double").className = canDouble ? "btn" : "btn disabled";
+}
+
+function bjSetCoach(msg) { $("bj-coach").innerHTML = msg; }
+
+function bjShowCoach() {
+  var recBtns = [$("bj-hit"), $("bj-stand"), $("bj-double")];
+  for (var i = 0; i < recBtns.length; i++) recBtns[i].className = recBtns[i].className.replace(" recommend", "");
+  if (!S.settings.coach || bj.state !== "player" || !bj.dealer.length) return;
+  var canDouble = bj.player.length === 2 && canAfford(bj.bet);
+  var act = bjStrategy(bj.player, bj.dealer[0], canDouble);
+  var hv = bjVal(bj.player, false);
+  var du = bjUpVal(bj.dealer[0]);
+  var msg = bjCoachMsg(act, hv.total, du, hv.soft);
+  if (S.settings.showCount) {
+    var dev = bjDeviation(bjTrueCount(), hv.total, du, canDouble);
+    if (dev) { act = dev.act; msg = dev.msg; }
+  }
+  bjSetCoach(msg);
+  var btn = act === "H" ? $("bj-hit") : act === "S" ? $("bj-stand") : $("bj-double");
+  btn.className += " recommend";
+}
+
+/* ---- the round ---- */
+function bjAddChip(v) {
+  if (bj.state !== "bet") return;
+  var maxBet = Math.min(500, S.coins);
+  if (bj.bet + v > maxBet) {
+    toast(S.coins < bj.bet + v ? "Not enough coins, Captain!" : "Table limit is ⚓ 500, Captain.");
+    return;
+  }
+  bj.bet += v;
+  sfx("coin");
+  bjRender();
+}
+
+function bjDeal() {
+  if (bj.state !== "bet") return;
+  if (bj.bet === 0 && bj.lastBet && canAfford(bj.lastBet)) bj.bet = Math.min(bj.lastBet, Math.min(500, S.coins));
+  if (bj.bet < 10) { toast("Minimum bet is ⚓ 10, Captain."); return; }
+  if (!spendCoins(bj.bet)) { toast("Not enough coins, Captain!"); return; }
+  if (bj.shoe.length < 78) bjNewShoe(true);
+
+  bj.player = []; bj.dealer = [];
+  bj.state = "dealing";
+  bj.resolvedMsg = "";
+  bjSetCoach("Dealing…");
+  bjRender();
+
+  var seq = [
+    function() { bj.player.push(bjDrawCard(true)); },
+    function() { bj.dealer.push(bjDrawCard(true)); },
+    function() { bj.player.push(bjDrawCard(true)); },
+    function() { bj.dealer.push(bjDrawCard(false)); }
+  ];
+  var step = 0;
+  var tick = function() {
+    seq[step](); sfx("deal"); bjRender();
+    step++;
+    if (step < seq.length) { setTimeout(tick, animMs(230)); }
+    else { setTimeout(bjAfterDeal, animMs(320)); }
+  };
+  tick();
+}
+
+function bjAfterDeal() {
+  var playerBJ = bjIsBJ(bj.player);
+  var up = bj.dealer[0];
+  var dealerCouldBJ = (up.r === 1 || up.r >= 10);
+
+  if (playerBJ || dealerCouldBJ) {
+    var dealerBJ = bjIsBJ(bj.dealer);
+    if (playerBJ || dealerBJ) {
+      if (up.r === 1 && !playerBJ) bjSetCoach("Dealer shows an Ace… no insurance at this table — it's a sucker's bet, Captain.");
+      bjRevealHole();
+      bjRender();
+      setTimeout(function() { bjResolve(); }, animMs(600));
+      return;
+    }
+  }
+  bj.state = "player";
+  bjRender();
+  bjShowCoach();
+}
+
+function bjRevealHole() {
+  if (bj.dealer.length >= 2 && !bj.dealer[1].up) {
+    bj.dealer[1].up = true;
+    bjCount(bj.dealer[1]);
+    sfx("flip");
+  }
+}
+
+function bjHit() {
+  if (bj.state !== "player") return;
+  bj.player.push(bjDrawCard(true));
+  sfx("deal");
+  bjRender();
+  var pv = bjVal(bj.player, false);
+  if (pv.total > 21) { bjResolve(); }
+  else if (pv.total === 21) { bjStand(); }
+  else bjShowCoach();
+}
+
+function bjStand() {
+  if (bj.state !== "player") return;
+  bj.state = "dealer";
+  bjRender();
+  bjDealerPlay();
+}
+
+function bjDouble() {
+  if (bj.state !== "player" || bj.player.length !== 2) return;
+  if (!spendCoins(bj.bet)) { toast("Not enough coins to double, Captain."); return; }
+  bj.bet *= 2;
+  bjSetCoach("Doubled down! One card, then we hold the line.");
+  bj.player.push(bjDrawCard(true));
+  sfx("deal");
+  bjRender();
+  if (bjVal(bj.player, false).total > 21) bjResolve();
+  else { bj.state = "dealer"; bjDealerPlay(); }
+}
+
+function bjDealerPlay() {
+  bjRevealHole();
+  bjRender();
+  var loop = function() {
+    if (CaptainsDeck.bjDealerShouldHit(bj.dealer)) {
+      setTimeout(function() {
+        bj.dealer.push(bjDrawCard(true));
+        sfx("deal");
+        bjRender();
+        loop();
+      }, animMs(480));
+    } else {
+      setTimeout(bjResolve, animMs(420));
+    }
+  };
+  loop();
+}
+
+function bjResolve() {
+  var pv = bjVal(bj.player, false).total;
+  var dvHidden = !bj.dealer[1] || !bj.dealer[1].up;
+  if (dvHidden) bjRevealHole();
+  var dv = bjVal(bj.dealer, false).total;
+  var settled = CaptainsDeck.bjSettle(bj.player, bj.dealer, bj.bet);
+  var winnings = settled.winnings, won = settled.won, push = settled.push, msg = "";
+  var playerBJ = settled.outcome === "blackjack";
+
+  if (settled.outcome === "bust") {
+    msg = "Bust! The sea claims this one, Captain.";
+  } else if (settled.outcome === "blackjack") {
+    msg = "BLACKJACK! 21 on the nose — paid 3 to 2!";
+    S.stats.bjBlackjacks++;
+  } else if (settled.outcome === "push" && CaptainsDeck.bjIsNatural(bj.player)) {
+    msg = "Push! Both blackjack. Your bet is returned.";
+  } else if (settled.outcome === "dealer_blackjack") {
+    msg = "Dealer blackjack. Better luck next hand, Captain.";
+  } else if (settled.outcome === "dealer_bust") {
+    msg = "Dealer busts with " + dv + "! Victory is yours, Captain!";
+  } else if (settled.outcome === "win") {
+    msg = "You win! " + pv + " beats " + dv + "!";
+  } else if (settled.outcome === "lose") {
+    msg = "Dealer wins with " + dv + ". Better luck next hand, Captain.";
+  } else {
+    msg = "Push! " + pv + " ties " + dv + ". Your bet is returned.";
+  }
+
+  if (winnings > 0) addCoins(winnings, !won);
+  S.stats.bjPlayed++;
+  if (won) {
+    S.stats.bjWins++;
+    recordWin("blackjack");
+    if (winnings > S.stats.bjBiggestWin) S.stats.bjBiggestWin = winnings;
+    sfx(playerBJ ? "jackpot" : "win");
+  } else if (!push) {
+    recordLoss("blackjack");
+    sfx("bad");
+  }
+
+  bj.resolvedMsg = msg;
+  bjSetCoach(msg + "<br><b>Tap DEAL for the next hand.</b>");
+  bj.lastBet = bj.bet;
+  bj.bet = 0;
+  bj.state = "bet";
+  var recBtns = [$("bj-hit"), $("bj-stand"), $("bj-double")];
+  for (var i = 0; i < recBtns.length; i++) recBtns[i].className = recBtns[i].className.replace(" recommend", "");
+  bjRender();
+}
+
+function bjWire() {
+  var chips = document.querySelectorAll("[data-chip]");
+  for (var i = 0; i < chips.length; i++) {
+    (function(el) {
+      el.addEventListener("click", function() { bjAddChip(+el.getAttribute("data-chip")); });
+    })(chips[i]);
+  }
+  $("bj-deal").addEventListener("click", bjDeal);
+  $("bj-clearbet").addEventListener("click", function() {
+    if (bj.state === "bet") { bj.bet = 0; sfx("tap"); bjRender(); }
+  });
+  $("bj-hit").addEventListener("click", bjHit);
+  $("bj-stand").addEventListener("click", bjStand);
+  $("bj-double").addEventListener("click", bjDouble);
+}
+bjWire();
+
+/* ============================ ANCHOR SLOTS =================================
+   Three reels, generous payouts, and a machine that quietly warms up
+   when the Captain has had a cold streak.                                  */
+var SL_SYMBOLS = ["7", "⚓", "★", "♥", "♠"];
+var SL_WEIGHTS = [1, 2, 3, 4, 4];
+var SL_COLORS = { "7":"#c0281c", "⚓":"#123252", "★":"#b08d1f", "♥":"#c0281c", "♠":"#151a21" };
+var slBet = 10;
+var slSpinning = false;
+
+function slEnter() {
+  slUpdateBetUI();
+  $("sl-msg").textContent = "Good luck, Captain!";
+}
+
+function slPickSymbol() {
+  var total = 0, i;
+  for (i = 0; i < SL_WEIGHTS.length; i++) total += SL_WEIGHTS[i];
+  var roll = Math.random() * total;
+  for (i = 0; i < SL_WEIGHTS.length; i++) {
+    roll -= SL_WEIGHTS[i];
+    if (roll < 0) return SL_SYMBOLS[i];
+  }
+  return SL_SYMBOLS[SL_SYMBOLS.length - 1];
+}
+
+function slUpdateBetUI() {
+  var btns = document.querySelectorAll("[data-slbet]");
+  for (var i = 0; i < btns.length; i++) {
+    var v = +btns[i].getAttribute("data-slbet");
+    btns[i].className = "btn blue small" + (v === slBet ? " slon" : "");
+  }
+  $("sl-spin").textContent = "SPIN — " + slBet + " coins";
+}
+
+function slSetReel(i, sym) {
+  var r = $("sl-r" + i);
+  r.textContent = sym;
+  r.style.color = SL_COLORS[sym] || "#132f4e";
+}
+
+function slSpin() {
+  if (slSpinning) return;
+  if (!spendCoins(slBet)) {
+    toast("Not enough coins, Captain. The lobby's Relief Fund can help.");
+    return;
+  }
+  slSpinning = true;
+  S.stats.slotsSpins++;
+  $("sl-msg").textContent = "…";
+  sfx("deal");
+
+  // Decide the outcome up front (the reels are showmanship)
+  var finals;
+  var help = shouldHelp("slots") && Math.random() < 0.18 + helpIntensity("slots");
+  if (help) {
+    var roll = Math.random();
+    if (roll < 0.45) { var s = Math.random() < 0.5 ? "♥" : "♠"; finals = [s, s, s]; }
+    else if (roll < 0.75) finals = ["★", "★", "★"];
+    else if (roll < 0.92) {
+      var other = SL_SYMBOLS[2 + Math.floor(Math.random() * 3)];
+      finals = ["⚓", "⚓", other];
+    }
+    else finals = ["⚓", "⚓", "⚓"];
+  } else {
+    finals = [slPickSymbol(), slPickSymbol(), slPickSymbol()];
+  }
+
+  var intervals = [];
+  for (var i = 0; i < 3; i++) {
+    (function(idx) {
+      var r = $("sl-r" + idx);
+      r.className = "reel spin";
+      intervals[idx] = setInterval(function() {
+        slSetReel(idx, SL_SYMBOLS[Math.floor(Math.random() * SL_SYMBOLS.length)]);
+      }, 70);
+      setTimeout(function() {
+        clearInterval(intervals[idx]);
+        r.className = "reel hit";
+        slSetReel(idx, finals[idx]);
+        sfx("flip");
+        setTimeout(function() { r.className = "reel"; }, 500);
+        if (idx === 2) slSettle(finals);
+      }, animMs(650 + idx * 380));
+    })(i);
+  }
+}
+
+function slSettle(f) {
+  var paid = CaptainsDeck.slotsPayout(f, slBet);
+  var win = paid.win, msg = "";
+
+  if (paid.kind === "jackpot7") {
+    msg = "⚓ JACKPOT! Three sevens! +" + win + "!";
+    S.stats.slotsJackpots++; sfx("jackpot");
+  } else if (paid.kind === "jackpotAnchor") {
+    msg = "Three anchors — the whole fleet salutes! +" + win + "!";
+    S.stats.slotsJackpots++; sfx("jackpot");
+  } else if (paid.kind === "stars") {
+    msg = "Three stars — stellar shooting! +" + win + "!"; sfx("win");
+  } else if (paid.kind === "three") {
+    msg = "Three of a kind! +" + win + "!"; sfx("win");
+  } else if (paid.kind === "twoAnchors") {
+    msg = "Two anchors hold fast! +" + win + "!"; sfx("coin");
+  } else if (paid.kind === "oneAnchor") {
+    msg = "The anchor saves your bet — ⚓ " + win + " back."; sfx("coin");
+  } else {
+    var misses = ["So close! The tide will turn.", "Not this time. Spin again, Captain.", "The sea gives, and the sea takes."];
+    msg = misses[Math.floor(Math.random() * misses.length)];
+    sfx("bad");
+  }
+
+  if (win > 0) {
+    addCoins(win, true);
+    if (win > slBet) recordWin("slots");
+    if (win > S.stats.slotsBiggestWin) S.stats.slotsBiggestWin = win;
+  } else {
+    recordLoss("slots");
+  }
+  $("sl-msg").textContent = msg;
+  slSpinning = false;
+  save();
+}
+
+function slWire() {
+  var btns = document.querySelectorAll("[data-slbet]");
+  for (var i = 0; i < btns.length; i++) {
+    (function(el) {
+      el.addEventListener("click", function() {
+        if (slSpinning) return;
+        slBet = +el.getAttribute("data-slbet");
+        sfx("tap");
+        slUpdateBetUI();
+      });
+    })(btns[i]);
+  }
+  $("sl-spin").addEventListener("click", slSpin);
+}
+slWire();
+
+/* ============================ WAR AT SEA ===================================
+   The simplest battle there is: one button, high card wins.
+   Ties mean WAR — three cards down, one to decide, no extra charge.       */
+var warBusy = false;
+
+function warEnter() {
+  $("war-them").innerHTML = "";
+  $("war-you").innerHTML = "";
+  $("war-msg").textContent = "High card wins. 10 coins a battle — win pays 20.";
+  $("war-pile").textContent = "";
+  $("war-flip").disabled = false;
+  $("war-flip").className = "btn green";
+}
+
+function warVal(c) { return CaptainsDeck.warValue(c); }
+
+function warShowCard(boxId, card) {
+  var host = $(boxId);
+  host.innerHTML = "";
+  var el = cardEl(card, 105);
+  el.style.left = "0px"; el.style.top = "0px";
+  host.appendChild(el);
+}
+
+function warDrawBiased(deck) {
+  var biased = shouldHelp("war") && Math.random() < 0.35 + helpIntensity("war");
+  if (!biased || deck.length < 2) return deck.pop();
+  var a = deck.pop(), b = deck.pop();
+  var keep = warVal(a) >= warVal(b) ? a : b;
+  var other = keep === a ? b : a;
+  deck.splice(Math.floor(Math.random() * deck.length), 0, other);
+  return keep;
+}
+
+function warFlip() {
+  if (warBusy) return;
+  if (!spendCoins(10)) {
+    toast("Not enough coins, Captain. The lobby's Relief Fund can help.");
+    return;
+  }
+  warBusy = true;
+  S.stats.warPlayed++;
+  $("war-flip").disabled = true;
+  $("war-flip").className = "btn green disabled";
+  $("war-pile").textContent = "";
+
+  var deck = shuffle(makeDeck());
+  warShowCard("war-them", { r:1, s:0, up:false });
+  warShowCard("war-you", { r:1, s:0, up:false });
+  $("war-msg").textContent = "Steady…";
+  sfx("deal");
+
+  setTimeout(function() {
+    var mine = warDrawBiased(deck); mine.up = true;
+    var theirs = deck.pop(); theirs.up = true;
+    warShowCard("war-them", theirs);
+    warShowCard("war-you", mine);
+    sfx("flip");
+    setTimeout(function() { warJudge(deck, mine, theirs, false); }, animMs(500));
+  }, animMs(450));
+}
+
+function warJudge(deck, mine, theirs, isWar) {
+  var verdict = CaptainsDeck.warCompare(mine, theirs);
+  if (verdict === "win") {
+    var prize = isWar ? 50 : 20;
+    addCoins(prize, true);
+    recordWin("war");
+    S.stats.warWins++;
+    sfx(isWar ? "jackpot" : "win");
+    $("war-msg").textContent = isWar
+      ? "WAR won! You seize ⚓ " + prize + ", Captain!"
+      : "You take the day! ⚓ +" + prize + ".";
+    warDone();
+  } else if (verdict === "lose") {
+    recordLoss("war");
+    sfx("bad");
+    $("war-msg").textContent = isWar
+      ? "War lost… the sea is cruel today. Steady on."
+      : "The enemy takes this one. Battle again, Captain!";
+    warDone();
+  } else {
+    // WAR!
+    S.stats.warWars++;
+    sfx("war");
+    $("war-msg").textContent = "⚔ WAR! Battle stations!";
+    $("war-pile").textContent = "Three cards face down from each side… one card to decide it all.";
+    warShowCard("war-them", { r:1, s:0, up:false });
+    warShowCard("war-you", { r:1, s:0, up:false });
+    setTimeout(function() {
+      for (var i = 0; i < 6 && deck.length > 2; i++) deck.pop();  // the burn cards
+      var m2 = warDrawBiased(deck); m2.up = true;
+      var t2 = deck.pop(); t2.up = true;
+      warShowCard("war-them", t2);
+      warShowCard("war-you", m2);
+      sfx("flip");
+      setTimeout(function() { warJudge(deck, m2, t2, true); }, animMs(500));
+    }, animMs(1100));
+  }
+}
+
+function warDone() {
+  save();
+  setTimeout(function() {
+    warBusy = false;
+    $("war-flip").disabled = false;
+    $("war-flip").className = "btn green";
+    $("war-flip").textContent = "⚔ BATTLE AGAIN — 10 coins";
+  }, animMs(500));
+}
+
+$("war-flip").addEventListener("click", warFlip);
+
+/* ============================ BOOT ========================================= */
+function wireNav() {
+  var navs = document.querySelectorAll("[data-go]");
+  for (var i = 0; i < navs.length; i++) {
+    (function(el) {
+      el.addEventListener("click", function() {
+        sfx("tap");
+        showScreen(el.getAttribute("data-go"));
+      });
+    })(navs[i]);
+  }
+  $("daily-btn").addEventListener("click", collectDaily);
+  document.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+  // First user touch unlocks audio on mobile browsers
+  document.addEventListener("touchstart", ensureAudio, { passive: true });
+  document.addEventListener("mousedown", ensureAudio);
+}
+
+loadSave();
+S.settings.cardBack = CaptainsDeck.normalizeCardBackId(S.settings.cardBack);
+applyScale();
+wireNav();
+updateCoinDisplays();
+showScreen("lobby");
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "the-captains-deck",
+  "private": true,
+  "description": "Ad-free Navy card room for Grandpa Ralph — Solitaire, Blackjack, Slots, War.",
+  "scripts": {
+    "test": "node tests/run-tests.js"
+  }
+}
